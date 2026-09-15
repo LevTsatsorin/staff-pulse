@@ -1,0 +1,12 @@
+# Code-only graph of src/, server/ and shared/: structure, dependencies, growth.
+*.md
+*.json
+*.yaml
+*.yml
+*.html
+docs/
+openspec/
+notes/
+.claude/
+.vscode/
+.git-hooks/

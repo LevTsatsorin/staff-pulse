@@ -42,7 +42,6 @@ type OrgModel = {
   rootIds: string[];
   aggregates: Record<string, Aggregate>;   // { totalHeadcount, totalBudget, perfWeightedSum, avgPerformance: number | null }
   version: number;                         // from ETag of the snapshot / last applied patch
-  snapshotVersion: number;                 // version at load time; version !== snapshotVersion ⇒ live patches applied
 };
 ```
 
@@ -57,22 +56,27 @@ type OrgModel = {
 ### Versions, ETag, WebSocket
 - Server keeps `version` (monotonic). `GET /api/org-tree` sends `ETag: "<version>"`,
   `Cache-Control: no-cache`, answers 304 to a matching `If-None-Match`.
-- WS on connect: `{ type: 'hello', version }`. If `hello.version > model.version` → `invalidateQueries`.
+- WS on connect: `{ type: 'hello', version }`. Any mismatch with `model.version` (newer: missed patches, older: restarted server) → one refetch; equal → no request.
 - Patch: `{ type: 'patch', version, changes: [{ id, fields: { headcount?, budget?, performance? }, updatedAt }] }`.
   Validated by the same zod discipline as REST. `version <= model.version` → ignore;
   `version === model.version + 1` → `setQueryData(applyPatch)`; gap or unknown id → one `invalidateQueries`.
-- After reconnect patches were lost → one refetch; if nothing changed, structural sharing keeps references.
+- Refetch goes through `invalidateQueries(..., { cancelRefetch: false })` so bursts of gaps do not restart an in-flight snapshot. Decisions live in the pure `resolveLiveMessage`. Server scenarios `empty|error|invalid` run no ticker.
 - Backoff: `min(30_000, 1_000 · 2^attempt) · random(0.5…1)`; reset attempt on `open`; `online` event
   reconnects immediately. Status: `connecting | live | reconnecting (in N s) | offline`.
 - StrictMode mounts effects twice: cleanup closes the socket, clears the timer, sets `disposed` so a
   late `onclose` never schedules a reconnect. Otherwise dev applies every patch twice.
 
 ### Fade of updated cells (~1.5 s)
-- CSS `@keyframes` from `var(--color-flash)` to transparent on an inner `<span>`.
-- The span's `key` is `${field}:${value}`; a changed value remounts it and restarts the animation.
-  Unchanged cells keep their key → no flash. Row keeps `key={id}`.
-- Animation is enabled only when `model.version !== model.snapshotVersion`, so the initial render
-  does not flash every cell. No per-cell timers.
+- `FlashValue` keeps `{ value, generation }` in state and bumps the generation during render when the value
+  really changes; the generation is the `key` of the inner `<span>`, so only changed cells remount and replay
+  the CSS `@keyframes`. First mounts (initial load, expand, filter) stay at generation 0 and never flash.
+  No `snapshotVersion`, no timers. Rejected: toggling an animation class by model version, which would
+  start the animation on every existing cell at the first patch.
+- Reduced motion: the flash holds for 1.5 s with `steps(1, end)` instead of fading.
+
+### Re-render budget on patches
+- `applyPatch` keeps references of untouched nodes/aggregates; `OrgTableRow` memo compares row fields
+  (`isSameRow`); `useRevealNode` returns a stable callback (model read from a ref, parentId never changes).
 
 ### Table
 - Real `<table>`, `<th aria-sort>` with a `<button>` inside, sticky header, numeric columns right
@@ -97,6 +101,8 @@ type OrgModel = {
   (`behavior: 'smooth'` only without reduced motion). Selection is bidirectional.
 - Indent guides: each `ul[role=group]` paints a tinted band + line under the parent's chevron column, color per nesting
   level via CSS custom properties set by nesting selectors in `OrgTree` (indent-rainbow style, no depth prop).
+- Branches animate via `Collapsible` (grid rows 0fr -> 1fr, children always mounted, collapsed part `inert`);
+  scroll to a revealed node waits `EXPAND_ANIMATION_MS`. Tree arrow-key navigation is deferred (optional, after step 4).
 - Performance indicator: `getPerformanceTone(value)` → `'low' | 'mid' | 'high'` with thresholds
   `< 50`, `< 80`, `≥ 80` in `constants/ui.ts`; number is shown next to the color and an `aria-label`
   «Эффективность 73%» exists for screen readers / colour-blind users.

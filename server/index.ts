@@ -4,10 +4,13 @@ import { setTimeout as sleep } from 'node:timers/promises';
 import { API_PATHS } from '../shared/api.ts';
 
 import { state } from './data.ts';
+import { handleLiveUpgrade, startPatchTicker } from './live.ts';
 
 const PORT = Number(process.env.PORT ?? 3001);
 const SCENARIO = process.env.MOCK_SCENARIO || undefined;
 const SLOW_DELAY_MS = 2_000;
+// These scenarios replace the data, so live patches would target nodes the client never received.
+const HAS_LIVE_PATCHES = SCENARIO !== 'empty' && SCENARIO !== 'error' && SCENARIO !== 'invalid';
 
 const sendJson = (
   res: ServerResponse,
@@ -19,23 +22,24 @@ const sendJson = (
   res.end(JSON.stringify(body));
 };
 
-const scenarioBody = () => {
-  if (SCENARIO === 'empty') return [];
-  if (SCENARIO === 'invalid') return state.nodes.map(({ id: _id, ...rest }) => rest);
-  return state.nodes;
-};
-
 const handleOrgTree = async (req: IncomingMessage, res: ServerResponse) => {
   if (SCENARIO === 'slow') await sleep(SLOW_DELAY_MS);
   if (SCENARIO === 'error') return sendJson(res, 500, { message: 'Mock server failure' });
-  if (SCENARIO) return sendJson(res, 200, scenarioBody());
+  if (SCENARIO === 'invalid') {
+    return sendJson(
+      res,
+      200,
+      state.nodes.map(({ id: _id, ...rest }) => rest),
+    );
+  }
 
   const etag = `"${state.version}"`;
   if (req.headers['if-none-match'] === etag) {
     res.writeHead(304, { ETag: etag });
     return res.end();
   }
-  sendJson(res, 200, state.nodes, { ETag: etag, 'Cache-Control': 'no-cache' });
+  const body = SCENARIO === 'empty' ? [] : state.nodes;
+  sendJson(res, 200, body, { ETag: etag, 'Cache-Control': 'no-cache' });
 };
 
 const route = async (req: IncomingMessage, res: ServerResponse) => {
@@ -45,13 +49,18 @@ const route = async (req: IncomingMessage, res: ServerResponse) => {
   sendJson(res, 404, { message: 'Not found' });
 };
 
-createServer(async (req, res) => {
+const server = createServer(async (req, res) => {
   try {
     await route(req, res);
   } catch (error) {
     console.error(error);
     sendJson(res, 500, { message: 'Internal error' });
   }
-}).listen(PORT, () => {
+});
+
+server.on('upgrade', handleLiveUpgrade);
+server.listen(PORT, () => {
   console.log(`Mock API: http://localhost:${PORT}${SCENARIO ? ` (scenario: ${SCENARIO})` : ''}`);
 });
+
+if (HAS_LIVE_PATCHES) startPatchTicker();

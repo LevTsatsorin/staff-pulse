@@ -47,9 +47,11 @@ const createRandom = (seed: number) => () => {
   return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
 };
 
-export const generateNodes = (): OrgNodeDto[] => {
-  const random = createRandom(SEED);
-  const randomInt = (min: number, max: number) => min + Math.floor(random() * (max - min + 1));
+export const createRandomInt = (random: () => number) => (min: number, max: number) =>
+  min + Math.floor(random() * (max - min + 1));
+
+const generateNodes = (): OrgNodeDto[] => {
+  const randomInt = createRandomInt(createRandom(SEED));
   const nodes: OrgNodeDto[] = [];
 
   const push = (id: string, name: string, parentId: string | null, headcount: number) => {

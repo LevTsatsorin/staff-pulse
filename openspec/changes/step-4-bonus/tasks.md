@@ -17,3 +17,7 @@
 - [ ] 3.1 `docs/adr/005-ai-поиск-с-fallback.md`; `docs/architecture.md` финальная (слои, поток API → cache → hooks → UI, WS, deployment-схема); README: docker-запуск, env, AI-поиск, «Интерпретации» полные, размеры бандла
 - [ ] 3.2 Скриншоты/GIF в `docs/media/`: split-view, fade после патча, бейдж reconnecting, три состояния (загрузка/ошибка/пусто), AI-чипы; вставить в README
 - [ ] 3.3 README «AI в разработке» из `notes/ai-log.md`: что генерировалось, что переписано руками и почему, какие инструменты (Claude Code, openspec, скиллы); запись в лог; после приёмки — `openspec archive step-4-bonus`, затем передать автору текст коммита `feat: step 04 — docker, nginx, AI search` и тег `step/4` (лёгкие теги пушатся явно: `git push origin step/4`)
+
+## 4. Необязательно, если останется время
+
+- [ ] 4.1 Навигация стрелками по дереву по паттерну WAI-ARIA tree (↑/↓ — соседний видимый узел, → раскрыть или перейти к первому ребёнку, ← свернуть или перейти к родителю, Home/End), roving tabindex на `treeitem` (у узлов уже есть `tabIndex={-1}`); проверить с клавиатуры

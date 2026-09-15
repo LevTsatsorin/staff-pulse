@@ -15,5 +15,4 @@ export type OrgModel = {
   rootIds: string[];
   aggregates: Record<string, Aggregate>;
   version: number;
-  snapshotVersion: number;
 };

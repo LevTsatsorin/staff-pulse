@@ -13,6 +13,7 @@ export const GlobalStyle = createGlobalStyle`
     --color-danger: #d92d20;
     --color-flash: #fff1b8;
     --color-skeleton: #e9ebf0;
+    --color-skeleton-highlight: #f5f6f9;
     --color-tone-low-bg: #fde8e8;
     --color-tone-low-text: #b42318;
     --color-tone-mid-bg: #fff4e5;
@@ -45,6 +46,7 @@ export const GlobalStyle = createGlobalStyle`
       --color-danger: #f97066;
       --color-flash: #4d4118;
       --color-skeleton: #262a34;
+      --color-skeleton-highlight: #323744;
       --color-tone-low-bg: #3b1a1a;
       --color-tone-low-text: #f97066;
       --color-tone-mid-bg: #3d2a12;

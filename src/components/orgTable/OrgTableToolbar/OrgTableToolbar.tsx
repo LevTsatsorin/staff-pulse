@@ -2,7 +2,7 @@ import type React from 'react';
 
 import styled from 'styled-components';
 
-import { focusRing, tabularNums } from 'src/styles/mixins';
+import { focusRing, panelBar, tabularNums } from 'src/styles/mixins';
 
 interface OrgTableToolbarProps {
   query: string;
@@ -37,12 +37,8 @@ export const OrgTableToolbar: React.FC<OrgTableToolbarProps> = ({
 );
 
 const Bar = styled.div`
-  display: flex;
+  ${panelBar}
   flex: none;
-  align-items: center;
-  gap: ${({ theme }) => theme.space(3)};
-  padding: ${({ theme }) => theme.space(3)} ${({ theme }) => theme.space(4)};
-  border-bottom: 1px solid ${({ theme }) => theme.colors.border};
 `;
 
 const SearchField = styled.div`

@@ -31,7 +31,7 @@ export const buildOrgModel = (dtos: readonly OrgNodeDto[], version = 0): OrgMode
   }
 
   const aggregates = computeAggregates(nodes, childrenIds, rootIds);
-  return { nodes, childrenIds, rootIds, aggregates, version, snapshotVersion: version };
+  return { nodes, childrenIds, rootIds, aggregates, version };
 };
 
 // Walks up to the first ancestor with a known depth (or a root), then assigns depths down the path.

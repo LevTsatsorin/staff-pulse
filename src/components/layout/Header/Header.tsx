@@ -2,16 +2,19 @@ import type React from 'react';
 
 import styled, { keyframes } from 'styled-components';
 
+import { ConnectionBadge } from 'src/components/layout/ConnectionBadge/ConnectionBadge';
 import { BUILD_VERSION } from 'src/config';
+import type { LiveConnection } from 'src/types/live';
 
 export type RefreshState = 'idle' | 'refreshing' | 'failed';
 
 interface HeaderProps {
   refreshState: RefreshState;
+  connection: LiveConnection;
   actions?: React.ReactNode;
 }
 
-export const Header: React.FC<HeaderProps> = ({ refreshState, actions }) => (
+export const Header: React.FC<HeaderProps> = ({ refreshState, connection, actions }) => (
   <Bar>
     <Brand>
       <Title>Staff Pulse</Title>
@@ -28,6 +31,7 @@ export const Header: React.FC<HeaderProps> = ({ refreshState, actions }) => (
         {refreshState === 'failed' && 'не удалось обновить, показаны последние данные'}
       </Hint>
       {actions}
+      <ConnectionBadge connection={connection} />
       <Version title="Версия сборки">{BUILD_VERSION}</Version>
     </Status>
   </Bar>

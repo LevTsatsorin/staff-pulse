@@ -11,6 +11,7 @@ export const theme = {
     danger: 'var(--color-danger)',
     flash: 'var(--color-flash)',
     skeleton: 'var(--color-skeleton)',
+    skeletonHighlight: 'var(--color-skeleton-highlight)',
   },
   radius: { sm: '6px', md: '10px' },
   shadow: 'var(--shadow-card)',

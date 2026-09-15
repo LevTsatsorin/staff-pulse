@@ -19,7 +19,13 @@ git status --short                     # staff_pulse_*.md and notes/ must NOT ap
 openspec status --change <step-N-…>    # every task ticked
 ```
 
-Any red line here is a blocking finding. Record the gzip sizes from `pnpm build`.
+```bash
+graphify update .                      # code graph: GRAPH_REPORT.md must show no import cycles
+npx -y jscpd@4 src server shared --min-tokens 25 --min-lines 4 --reporters console
+```
+
+Any red line here is a blocking finding. Record the gzip sizes from `pnpm build`. An import cycle or a
+clone outside tests is a finding; a new god node or surprising cross-community edge is worth a sentence.
 
 ## 2. Spec conformance
 

@@ -3,8 +3,8 @@ import { useRef } from 'react';
 
 import styled from 'styled-components';
 
-import { PerformanceIndicator } from 'src/components/common';
-import { FALLBACK_LEVEL_LABEL, LEVEL_LABELS } from 'src/constants/ui';
+import { Collapsible, FlashValue, PerformanceIndicator } from 'src/components/common';
+import { EXPAND_ANIMATION_MS, FALLBACK_LEVEL_LABEL, LEVEL_LABELS } from 'src/constants/ui';
 import { useScrollIntoView, useSelection } from 'src/hooks/common';
 import { focusRing, tabularNums } from 'src/styles/mixins';
 import type { OrgModel } from 'src/types/orgModel';
@@ -18,7 +18,7 @@ export const OrgTreeNode: React.FC<OrgTreeNodeProps> = ({ id, model }) => {
   const { selectedId, expandedIds, select, toggleExpanded } = useSelection();
   const rowRef = useRef<HTMLDivElement>(null);
   const isSelected = selectedId === id;
-  useScrollIntoView(rowRef, isSelected);
+  useScrollIntoView(rowRef, isSelected, EXPAND_ANIMATION_MS);
 
   const node = model.nodes[id];
   const aggregate = model.aggregates[id];
@@ -30,7 +30,7 @@ export const OrgTreeNode: React.FC<OrgTreeNodeProps> = ({ id, model }) => {
 
   const level = LEVEL_LABELS[node.depth] ?? FALLBACK_LEVEL_LABEL;
   const ownDetails = hasChildren
-    ? `${level.ownPrefix}: ${node.headcount} чел., эффективность ${node.performance}%`
+    ? `${level.ownPrefix}: ${node.headcount} чел., эффективность ${Math.round(node.performance)}%`
     : undefined;
 
   return (
@@ -55,17 +55,25 @@ export const OrgTreeNode: React.FC<OrgTreeNodeProps> = ({ id, model }) => {
         <SelectButton type="button" onClick={() => select(id)}>
           <Name $isRoot={node.depth === 0}>{node.name}</Name>
           <Meta data-tip={ownDetails}>
-            <Headcount>{aggregate.totalHeadcount} чел.</Headcount>
-            <PerformanceIndicator value={aggregate.avgPerformance} />
+            <FlashValue value={aggregate.totalHeadcount}>
+              <Headcount $hasDetails={Boolean(ownDetails)}>
+                {aggregate.totalHeadcount} чел.
+              </Headcount>
+            </FlashValue>
+            <FlashValue value={aggregate.avgPerformance}>
+              <PerformanceIndicator value={aggregate.avgPerformance} />
+            </FlashValue>
           </Meta>
         </SelectButton>
       </Row>
-      {isExpanded && (
-        <Group role="group">
-          {childIds.map(childId => (
-            <OrgTreeNode key={childId} id={childId} model={model} />
-          ))}
-        </Group>
+      {hasChildren && (
+        <Collapsible isOpen={isExpanded}>
+          <Group role="group">
+            {childIds.map(childId => (
+              <OrgTreeNode key={childId} id={childId} model={model} />
+            ))}
+          </Group>
+        </Collapsible>
       )}
     </li>
   );
@@ -153,12 +161,6 @@ const Meta = styled.span`
   align-items: center;
   gap: ${({ theme }) => theme.space(2)};
 
-  &[data-tip] > span:first-child {
-    text-decoration: underline dotted;
-    text-underline-offset: 3px;
-    cursor: help;
-  }
-
   &[data-tip]:hover::after {
     content: attr(data-tip);
     position: absolute;
@@ -177,10 +179,13 @@ const Meta = styled.span`
   }
 `;
 
-const Headcount = styled.span`
+const Headcount = styled.span<{ $hasDetails: boolean }>`
   flex: none;
   color: ${({ theme }) => theme.colors.textMuted};
   font-size: 12px;
+  text-decoration: ${({ $hasDetails }) => ($hasDetails ? 'underline dotted' : 'none')};
+  text-underline-offset: 3px;
+  cursor: ${({ $hasDetails }) => ($hasDetails ? 'help' : 'inherit')};
   ${tabularNums}
 `;
 

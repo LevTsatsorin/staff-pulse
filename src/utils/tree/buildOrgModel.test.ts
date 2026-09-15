@@ -15,7 +15,6 @@ describe('buildOrgModel', () => {
       rootIds: [],
       aggregates: {},
       version: 7,
-      snapshotVersion: 7,
     });
   });
 

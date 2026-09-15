@@ -1,3 +1,4 @@
+export * from './ConnectionBadge/ConnectionBadge';
 export * from './DashboardLayout/DashboardLayout';
 export * from './Header/Header';
 export * from './Panel/Panel';

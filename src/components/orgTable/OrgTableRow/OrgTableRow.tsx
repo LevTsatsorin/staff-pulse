@@ -3,28 +3,45 @@ import { memo, useRef } from 'react';
 
 import styled, { css } from 'styled-components';
 
-import { HighlightedText, PerformanceIndicator } from 'src/components/common';
+import { FlashValue, HighlightedText, PerformanceIndicator } from 'src/components/common';
 import { useScrollIntoView } from 'src/hooks/common';
 import { tabularNums } from 'src/styles/mixins';
 import type { TableRow } from 'src/types/table';
 import { formatMoney, formatNumber } from 'src/utils/format/formatNumber';
+import { isSameRow } from 'src/utils/table/isSameRow';
 
 interface OrgTableRowProps {
   row: TableRow;
   query: string;
   isSelected: boolean;
+  isActive: boolean;
   onSelect: (id: string) => void;
+  onFocusRow: (id: string) => void;
 }
 
 // Level chips reuse the tree indent colors; deeper levels share the last color.
 const TINTED_LEVELS = 4;
 
-const OrgTableRowBase: React.FC<OrgTableRowProps> = ({ row, query, isSelected, onSelect }) => {
+const OrgTableRowBase: React.FC<OrgTableRowProps> = ({
+  row,
+  query,
+  isSelected,
+  isActive,
+  onSelect,
+  onFocusRow,
+}) => {
   const rowRef = useRef<HTMLTableRowElement>(null);
   useScrollIntoView(rowRef, isSelected);
 
   return (
-    <Tr ref={rowRef} $selected={isSelected} onClick={() => onSelect(row.id)}>
+    <Tr
+      ref={rowRef}
+      data-row-id={row.id}
+      tabIndex={isActive ? 0 : -1}
+      $selected={isSelected}
+      onClick={() => onSelect(row.id)}
+      onFocus={() => onFocusRow(row.id)}
+    >
       <Td>
         <Name>
           <HighlightedText text={row.name} query={query} />
@@ -37,16 +54,32 @@ const OrgTableRowBase: React.FC<OrgTableRowProps> = ({ row, query, isSelected, o
           {row.levelName}
         </Level>
       </Td>
-      <NumericTd>{formatNumber(row.totalHeadcount)}</NumericTd>
-      <NumericTd>{formatMoney(row.totalBudget)}</NumericTd>
       <NumericTd>
-        <PerformanceIndicator value={row.avgPerformance} />
+        <FlashValue value={row.totalHeadcount}>{formatNumber(row.totalHeadcount)}</FlashValue>
+      </NumericTd>
+      <NumericTd>
+        <FlashValue value={row.totalBudget}>{formatMoney(row.totalBudget)}</FlashValue>
+      </NumericTd>
+      <NumericTd>
+        <FlashValue value={row.avgPerformance}>
+          <PerformanceIndicator value={row.avgPerformance} />
+        </FlashValue>
       </NumericTd>
     </Tr>
   );
 };
 
-export const OrgTableRow = memo(OrgTableRowBase);
+// Rows are rebuilt for every model, so memo compares row fields instead of the object reference:
+// a live patch re-renders only the rows of the changed node and its ancestors.
+const areRowPropsEqual = (prev: OrgTableRowProps, next: OrgTableRowProps) =>
+  prev.query === next.query &&
+  prev.isSelected === next.isSelected &&
+  prev.isActive === next.isActive &&
+  prev.onSelect === next.onSelect &&
+  prev.onFocusRow === next.onFocusRow &&
+  isSameRow(prev.row, next.row);
+
+export const OrgTableRow = memo(OrgTableRowBase, areRowPropsEqual);
 
 const Tr = styled.tr<{ $selected: boolean }>`
   cursor: pointer;
@@ -63,6 +96,28 @@ const Tr = styled.tr<{ $selected: boolean }>`
 
   &:hover > td {
     background: ${({ theme, $selected }) => ($selected ? theme.colors.accentSoft : theme.colors.surfaceHover)};
+  }
+
+  &:focus {
+    outline: none;
+  }
+
+  &:focus-visible > td {
+    box-shadow:
+      inset 0 2px ${({ theme }) => theme.colors.accent},
+      inset 0 -2px ${({ theme }) => theme.colors.accent};
+  }
+
+  &:focus-visible > td:first-child {
+    box-shadow:
+      inset 2px 2px ${({ theme }) => theme.colors.accent},
+      inset 0 -2px ${({ theme }) => theme.colors.accent};
+  }
+
+  &:focus-visible > td:last-child {
+    box-shadow:
+      inset -2px 2px ${({ theme }) => theme.colors.accent},
+      inset 0 -2px ${({ theme }) => theme.colors.accent};
   }
 `;
 

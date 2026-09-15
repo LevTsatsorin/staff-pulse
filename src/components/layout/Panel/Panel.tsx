@@ -2,6 +2,8 @@ import type React from 'react';
 
 import styled from 'styled-components';
 
+import { panelBar } from 'src/styles/mixins';
+
 interface PanelProps {
   title: string;
   actions?: React.ReactNode;
@@ -30,12 +32,8 @@ const Card = styled.section`
 `;
 
 const CardHeader = styled.div`
-  display: flex;
-  align-items: center;
+  ${panelBar}
   justify-content: space-between;
-  gap: ${({ theme }) => theme.space(3)};
-  padding: ${({ theme }) => theme.space(3)} ${({ theme }) => theme.space(4)};
-  border-bottom: 1px solid ${({ theme }) => theme.colors.border};
 `;
 
 const CardTitle = styled.h2`

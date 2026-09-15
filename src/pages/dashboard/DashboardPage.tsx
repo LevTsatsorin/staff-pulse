@@ -1,7 +1,7 @@
 import type React from 'react';
 import { useMemo, useState } from 'react';
 
-import { Button, EmptyState, ErrorState, Skeleton } from 'src/components/common';
+import { Button, EmptyState, ErrorState } from 'src/components/common';
 import {
   DashboardLayout,
   Header,
@@ -10,8 +10,9 @@ import {
   SplitView,
   ViewToggle,
 } from 'src/components/layout';
-import { OrgTable } from 'src/components/orgTable';
-import { OrgTree } from 'src/components/orgTree';
+import { OrgTable, OrgTableSkeleton } from 'src/components/orgTable';
+import { OrgTree, OrgTreeSkeleton } from 'src/components/orgTree';
+import { useOrgLiveUpdates } from 'src/hooks/live';
 import { useOrgTree } from 'src/hooks/orgTree';
 import { SelectionProvider } from 'src/providers/SelectionProvider';
 import { ViewMode } from 'src/types/view';
@@ -29,6 +30,7 @@ const getRefreshState = (hasData: boolean, isFetching: boolean, isError: boolean
 
 export const DashboardPage: React.FC = () => {
   const { data: model, status, error, refetch, isFetching } = useOrgTree();
+  const connection = useOrgLiveUpdates();
   const [view, setView] = useState<ViewMode>(ViewMode.Tree);
   const defaultExpandedIds = useMemo(() => model && getDefaultExpandedIds(model), [model]);
   const retry = () => refetch();
@@ -41,12 +43,12 @@ export const DashboardPage: React.FC = () => {
           view={view}
           tree={
             <Panel title={TREE_TITLE}>
-              <Skeleton />
+              <OrgTreeSkeleton />
             </Panel>
           }
           table={
             <Panel title={TABLE_TITLE}>
-              <Skeleton lines={12} />
+              <OrgTableSkeleton />
             </Panel>
           }
         />
@@ -100,6 +102,7 @@ export const DashboardPage: React.FC = () => {
       header={
         <Header
           refreshState={getRefreshState(Boolean(model), isFetching, status === 'error')}
+          connection={connection}
           actions={hasViews && <ViewToggle value={view} onChange={setView} />}
         />
       }

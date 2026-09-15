@@ -4,6 +4,10 @@ export const SEARCH_DEBOUNCE_MS = 250;
 
 export const SPLIT_VIEW_MIN_WIDTH_PX = 1280;
 
+export const EXPAND_ANIMATION_MS = 200;
+
+export const FLASH_DURATION_MS = 1_500;
+
 // nodes with depth <= this value start expanded (0 = only roots)
 export const DEFAULT_EXPANDED_DEPTH = 0;
 

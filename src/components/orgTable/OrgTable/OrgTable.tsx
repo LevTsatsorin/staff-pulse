@@ -1,5 +1,5 @@
 import type React from 'react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import styled from 'styled-components';
 
@@ -9,7 +9,7 @@ import { OrgTableToolbar } from 'src/components/orgTable/OrgTableToolbar/OrgTabl
 import { SortableHeader } from 'src/components/orgTable/SortableHeader/SortableHeader';
 import { TABLE_COLUMNS } from 'src/constants/table';
 import { SEARCH_DEBOUNCE_MS } from 'src/constants/ui';
-import { useDebouncedValue, useSelection } from 'src/hooks/common';
+import { useDebouncedValue, useRovingRows, useSelection } from 'src/hooks/common';
 import { useSortState, useTableRows } from 'src/hooks/orgTable';
 import { useRevealNode } from 'src/hooks/orgTree';
 import type { OrgModel } from 'src/types/orgModel';
@@ -28,6 +28,8 @@ export const OrgTable: React.FC<OrgTableProps> = ({ model }) => {
   const { rows, totalCount } = useTableRows(model, appliedQuery, sort);
   const { selectedId } = useSelection();
   const revealNode = useRevealNode(model);
+  const rowIds = useMemo(() => rows.map(row => row.id), [rows]);
+  const { activeId, setActiveId, containerRef, handleKeyDown } = useRovingRows(rowIds, revealNode);
 
   return (
     <Wrapper>
@@ -37,18 +39,18 @@ export const OrgTable: React.FC<OrgTableProps> = ({ model }) => {
         shownCount={rows.length}
         totalCount={totalCount}
       />
-      {rows.length === 0 ? (
-        <EmptyState
-          title="Ничего не найдено"
-          description={`Нет подразделений, в названии которых есть «${appliedQuery.trim()}»`}
-          action={
-            <Button type="button" $variant="ghost" onClick={() => setQuery('')}>
-              Сбросить фильтр
-            </Button>
-          }
-        />
-      ) : (
-        <Scroller>
+      <Scroller>
+        {rows.length === 0 ? (
+          <EmptyState
+            title="Ничего не найдено"
+            description={`Нет подразделений, в названии которых есть «${appliedQuery.trim()}»`}
+            action={
+              <Button type="button" $variant="ghost" onClick={() => setQuery('')}>
+                Сбросить фильтр
+              </Button>
+            }
+          />
+        ) : (
           <Table>
             <thead>
               <tr>
@@ -62,20 +64,22 @@ export const OrgTable: React.FC<OrgTableProps> = ({ model }) => {
                 ))}
               </tr>
             </thead>
-            <tbody>
+            <tbody ref={containerRef} onKeyDown={handleKeyDown}>
               {rows.map(row => (
                 <OrgTableRow
                   key={row.id}
                   row={row}
                   query={appliedQuery}
                   isSelected={row.id === selectedId}
+                  isActive={row.id === activeId}
                   onSelect={revealNode}
+                  onFocusRow={setActiveId}
                 />
               ))}
             </tbody>
           </Table>
-        </Scroller>
-      )}
+        )}
+      </Scroller>
     </Wrapper>
   );
 };

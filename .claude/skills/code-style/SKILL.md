@@ -168,6 +168,8 @@ providers/SelectionProvider/
 - No `style={}` anywhere in `src/` (assignment rule). Dynamic state → transient prop or `data-*`
   attribute with a finite set of values.
 - Animations: CSS `@keyframes` and `transition`, restarted by React `key` changes, not JS timers.
+- Loading placeholders mirror the real layout (row height, columns, badges) and use the `skeletonFill`
+  mixin; a generic stack of grey bars is not a skeleton.
 - `@media (prefers-reduced-motion: reduce)` disables transitions and animations globally.
 - Any grid or flex item that contains a scroll container needs `min-width: 0` AND `min-height: 0`
   (grid tracks: `minmax(0, 1fr)`). The default `min-width: auto` stops the item from shrinking
@@ -175,13 +177,18 @@ providers/SelectionProvider/
 
 ## 9. Tooling
 
-### tsconfig (client) — strict set
-`target/lib ES2023`, `module ES2022`, `moduleResolution Bundler`, `jsx react-jsx`, `strict`,
+### tsconfig — one base, thin project configs
+`tsconfig.base.json` holds the strict set and aliases once: `target ES2023`, `strict`,
 `noImplicitOverride`, `noUncheckedIndexedAccess`, `noFallthroughCasesInSwitch`, `isolatedModules`,
-`noEmit`, `skipLibCheck`, `paths: { "src/*": ["./src/*"], "shared/*": ["./shared/*"] }`.
-Alias duplicated in `vite.config.ts` via `resolve.alias`.
-Server: `tsconfig.server.json` with `module NodeNext`, `erasableSyntaxOnly`, `types: ["node"]`,
-`allowImportingTsExtensions` — Node 24 runs the `.ts` files directly.
+`verbatimModuleSyntax`, `noEmit`, `skipLibCheck`, `paths: { "src/*", "shared/*" }`.
+`tsconfig.json` (solution root), `tsconfig.app.json`, `tsconfig.node.json`, `tsconfig.server.json` extend it
+and add only what differs (lib, module resolution, jsx, types). The root extends the base too, so tools
+that read only `tsconfig.json` (graphify, editors) resolve the aliases.
+Vite and Vitest read the aliases from tsconfig via `resolve.tsconfigPaths: true`; never repeat them in
+`vite.config.ts`. Aliases resolve only in files a tsconfig includes (`src/`, `shared/`): a throwaway script
+at the repo root must use relative imports or live under `src/`.
+Server: `module NodeNext`, `erasableSyntaxOnly`, `types: ["node"]`, `allowImportingTsExtensions`, and
+`paths: {}` so typecheck rejects `src/*` imports that Node could not resolve at runtime.
 
 ### Biome — one tool for lint + format
 `lineWidth 100`, single quotes in TS, double in JSX, semicolons always, trailing commas all,
@@ -206,6 +213,13 @@ image needs at runtime (`ws`, `zod`, `@anthropic-ai/sdk`).
 `src/config.ts` is the only reader of `import.meta.env`; `vite-env.d.ts` types `ImportMetaEnv`.
 The client calls relative `/api` and `/ws`, so it needs no env at all. `.env.example` documents
 server variables (`PORT`, `MOCK_SCENARIO`, `PATCH_INTERVAL_MS`, `ANTHROPIC_API_KEY`, `ANTHROPIC_MODEL`).
+
+### Growth and duplication checks
+- `graphify update .` refreshes the code-only knowledge graph in `graphify-out/` (gitignored, AST only,
+  no LLM). `.graphifyignore` keeps docs and planning files out. Read `graphify-out/GRAPH_REPORT.md`:
+  import cycles must stay «None», new god nodes and cross-community edges deserve a look.
+- `npx -y jscpd@4 src server shared --min-tokens 25 --min-lines 4 --reporters console` finds copy-paste.
+  Clones in production code are findings; repeated arrange blocks in tests are acceptable.
 
 ## 10. Tests (Vitest)
 

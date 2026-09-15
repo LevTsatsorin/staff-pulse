@@ -23,6 +23,9 @@ package. Forbidden by the assignment: UI libraries, inline CSS, auth, DB.
 ## Commands
 `pnpm dev` (client + server) · `build` · `start` · `typecheck` · `test` · `lint` · `lint:fix`.
 Before handing work back: `pnpm typecheck && pnpm lint && pnpm test && pnpm build`.
+Code graph: `graphify update .` (AST only, output in gitignored `graphify-out/`); query it with
+`graphify query "<question>"` before sweeping files by hand. Copy-paste check:
+`npx -y jscpd@4 src server shared --min-tokens 25 --min-lines 4 --reporters console`.
 
 ## Workflow
 1. Work inside the current openspec change: `openspec status --change step-N-…`; tick tasks as they land.
