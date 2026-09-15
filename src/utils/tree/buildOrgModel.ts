@@ -47,9 +47,11 @@ const resolveDepth = (start: OrgNodeDto, byId: DtoMap, depth: Record<string, num
       known = cached;
       break;
     }
+
     if (path.includes(node.id)) throw new OrgDataError(OrgDataErrorCode.Cycle, node.id);
     path.push(node.id);
     if (node.parentId === null) break;
+
     const parent: OrgNodeDto | undefined = byId[node.parentId];
     if (!parent) throw new OrgDataError(OrgDataErrorCode.Orphan, node.id);
     node = parent;

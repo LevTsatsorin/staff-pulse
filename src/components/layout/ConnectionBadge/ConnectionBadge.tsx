@@ -18,10 +18,7 @@ const LABELS: Record<ConnectionStatus, string> = {
 
 export const ConnectionBadge: React.FC<ConnectionBadgeProps> = ({ connection }) => {
   const secondsLeft = useCountdown(connection.retryAt);
-  const label =
-    connection.status === 'reconnecting'
-      ? `${LABELS.reconnecting} через ${secondsLeft} с`
-      : LABELS[connection.status];
+  const label = getLabel(connection.status, secondsLeft);
 
   return (
     <Badge data-status={connection.status} title="Соединение с live-обновлениями">
@@ -29,6 +26,14 @@ export const ConnectionBadge: React.FC<ConnectionBadgeProps> = ({ connection }) 
       {label}
     </Badge>
   );
+};
+
+// At zero the attempt is already running, so the countdown gives way to an ellipsis.
+const getLabel = (status: ConnectionStatus, secondsLeft: number): string => {
+  if (status !== 'reconnecting') return LABELS[status];
+  return secondsLeft > 0
+    ? `${LABELS.reconnecting} через ${secondsLeft} с`
+    : `${LABELS.reconnecting}…`;
 };
 
 const pulse = keyframes`

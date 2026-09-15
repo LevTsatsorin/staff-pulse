@@ -207,12 +207,12 @@ Scripts: `dev` (client + server), `dev:client`, `dev:server`, `build`, `start` (
 `typecheck`, `test`, `lint`, `lint:fix`, `prepare` (sets `core.hooksPath .git-hooks`).
 Exact versions, no `^`. `engines.node` and `packageManager` pinned.
 Client libraries are `devDependencies` (bundled by Vite); `dependencies` hold only what the server
-image needs at runtime (`ws`, `zod`, `@anthropic-ai/sdk`).
+image needs at runtime (`ws`, `zod`, `openai`).
 
 ### Env
 `src/config.ts` is the only reader of `import.meta.env`; `vite-env.d.ts` types `ImportMetaEnv`.
 The client calls relative `/api` and `/ws`, so it needs no env at all. `.env.example` documents
-server variables (`PORT`, `MOCK_SCENARIO`, `PATCH_INTERVAL_MS`, `ANTHROPIC_API_KEY`, `ANTHROPIC_MODEL`).
+server variables (`PORT`, `MOCK_SCENARIO`, `PATCH_INTERVAL_MS`, `OPENAI_API_KEY`, `OPENAI_MODEL`).
 
 ### Growth and duplication checks
 - `graphify update .` refreshes the code-only knowledge graph in `graphify-out/` (gitignored, AST only,

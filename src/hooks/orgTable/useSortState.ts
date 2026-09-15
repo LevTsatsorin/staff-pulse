@@ -11,5 +11,5 @@ export const useSortState = () => {
     [],
   );
 
-  return { sort, changeSort };
+  return { sort, changeSort, setSort };
 };

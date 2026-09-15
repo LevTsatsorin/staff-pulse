@@ -1,0 +1,14 @@
+node_modules
+dist
+coverage
+.git
+.git-hooks
+.env
+.vscode
+.claude
+openspec
+docs
+graphify-out
+notes
+**/*.md
+*.log

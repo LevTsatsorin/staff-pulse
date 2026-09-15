@@ -2,7 +2,7 @@ import type React from 'react';
 
 import styled from 'styled-components';
 
-import { TABLE_COLUMNS } from 'src/constants/table';
+import { TABLE_COLUMNS, TABLE_MIN_WIDTH_PX } from 'src/constants/table';
 import { panelBar, skeletonFill } from 'src/styles/mixins';
 
 // Tree pre-order like the real unsorted table: division, department, its teams.
@@ -80,7 +80,8 @@ const Counter = styled.span`
 
 const Grid = styled.div`
   display: grid;
-  grid-template-columns: minmax(160px, 1fr) 120px 110px 150px 110px;
+  grid-template-columns: ${TABLE_COLUMNS.map(column => column.width ?? 'minmax(0, 1fr)').join(' ')};
+  min-width: ${TABLE_MIN_WIDTH_PX}px;
 `;
 
 // Rows are transparent to the grid, so their cells line up with the header cells.

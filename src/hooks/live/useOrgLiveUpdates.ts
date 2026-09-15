@@ -43,6 +43,7 @@ export const useOrgLiveUpdates = (): LiveConnection => {
 
       const model = queryClient.getQueryData<OrgModel>(ORG_TREE_QUERY_KEY);
       const decision = resolveLiveMessage(model, message.data);
+
       if (decision.type === 'apply') queryClient.setQueryData(ORG_TREE_QUERY_KEY, decision.model);
       if (decision.type === 'refetch') {
         // cancelRefetch: false keeps an in-flight snapshot request instead of restarting it.
@@ -61,16 +62,19 @@ export const useOrgLiveUpdates = (): LiveConnection => {
       const current = new WebSocket(getLiveUrl());
       socket = current;
       current.onmessage = handleMessage;
+
       current.onopen = () => {
         attempt = 0;
         setConnection({ status: 'live', retryAt: null });
       };
+
       current.onclose = () => {
         if (isDisposed || socket !== current) return;
         if (!navigator.onLine) {
           setConnection({ status: 'offline', retryAt: null });
           return;
         }
+
         const delay = getBackoffDelay(attempt);
         attempt += 1;
         setConnection({ status: 'reconnecting', retryAt: Date.now() + delay });
@@ -82,6 +86,7 @@ export const useOrgLiveUpdates = (): LiveConnection => {
       attempt = 0;
       connect();
     };
+
     const handleOffline = () => {
       clearTimeout(retryTimer);
       setConnection({ status: 'offline', retryAt: null });
@@ -90,6 +95,7 @@ export const useOrgLiveUpdates = (): LiveConnection => {
 
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
+
     // Deferred so the StrictMode test unmount cancels the timer before any socket exists.
     retryTimer = setTimeout(connect, 0);
 

@@ -2,6 +2,9 @@ export const LOCALE = 'ru-RU';
 
 export const SEARCH_DEBOUNCE_MS = 250;
 
+// The server gives the model 5 s; the extra second covers the round trip.
+export const AI_SEARCH_TIMEOUT_MS = 6_000;
+
 export const SPLIT_VIEW_MIN_WIDTH_PX = 1280;
 
 export const EXPAND_ANIMATION_MS = 200;

@@ -22,6 +22,7 @@ package. Forbidden by the assignment: UI libraries, inline CSS, auth, DB.
 
 ## Commands
 `pnpm dev` (client + server) · `build` · `start` · `typecheck` · `test` · `lint` · `lint:fix`.
+Production stack: `docker-compose up --build` (nginx on `CLIENT_PORT`, default 8080). Never print or read `.env` values.
 Before handing work back: `pnpm typecheck && pnpm lint && pnpm test && pnpm build`.
 Code graph: `graphify update .` (AST only, output in gitignored `graphify-out/`); query it with
 `graphify query "<question>"` before sweeping files by hand. Copy-paste check:

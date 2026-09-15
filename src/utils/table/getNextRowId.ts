@@ -13,6 +13,7 @@ export const getNextRowId = (
 ): string | null => {
   const move = MOVES[key];
   if (!move || rowIds.length === 0) return null;
+
   const lastIndex = rowIds.length - 1;
   const index = activeId === null ? -1 : rowIds.indexOf(activeId);
   return rowIds[Math.min(lastIndex, Math.max(0, move(index, lastIndex)))] ?? null;

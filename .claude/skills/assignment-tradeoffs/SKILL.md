@@ -27,7 +27,7 @@ changes it; the README section «Интерпретации» must list the item
 | Live transport | WebSocket. | The deliverables list names a "WebSocket patch contract". |
 | Cache layer | TanStack Query v5, not a hand-written cache. | "stale time" is literally its API; abort via `signal`; `structuralSharing` gives "invalidate only on real change". Own cache = 100+ lines of races. → ADR-001 |
 | Height animation without inline CSS | `display: grid; grid-template-rows: 0fr → 1fr; transition` on the wrapper, inner `overflow: hidden; min-height: 0`. Collapsed content gets `inert`. | Measuring `scrollHeight` and setting `style.height` is inline CSS by another name. → ADR-004 |
-| AI search model | `ANTHROPIC_MODEL` env, default `claude-opus-5`; 5 s timeout, `AbortSignal.timeout`. Server-side call only. | Author's call: quality of parsing over latency; model is env-switchable, measure at step 4. Reviewer likely runs without a key, so the fallback must look intentional. |
+| AI search provider and model | OpenAI Responses API with structured outputs, `OPENAI_MODEL` env (default `gpt-5.6-terra`, final pick by measuring luna/terra/sol on 15–20 queries), `reasoning.effort: "low"`, 5 s timeout. Server-side call only. | Author's call: paid OpenAI access, no Anthropic key; the assignment names no provider. One module owns the provider call. Reviewer likely runs without a key, so the fallback must look intentional. |
 
 ## 2. Architecture decisions
 
@@ -102,7 +102,15 @@ type OrgModel = {
 - Indent guides: each `ul[role=group]` paints a tinted band + line under the parent's chevron column, color per nesting
   level via CSS custom properties set by nesting selectors in `OrgTree` (indent-rainbow style, no depth prop).
 - Branches animate via `Collapsible` (grid rows 0fr -> 1fr, children always mounted, collapsed part `inert`);
-  scroll to a revealed node waits `EXPAND_ANIMATION_MS`. Tree arrow-key navigation is deferred (optional, after step 4).
+  scroll to a revealed node waits `EXPAND_ANIMATION_MS`.
+- Tree keyboard (WAI-ARIA tree, done in step 4): `useRovingTree` + pure `getVisibleTreeIds` / `getTreeKeyAction`; one
+  tab stop on `treeitem`, inner buttons `tabIndex={-1}`, Enter/Space select only when the item itself has focus so
+  a focused chevron keeps its native click. `useRovingFocus` is shared with the table.
+  Tree items are nested, so React `onFocus` bubbles from a child item to every ancestor item: the item handler
+  must `stopPropagation()`, otherwise the ancestor overwrites the active id one step later. A new `selectedId`
+  (table click or Enter) resets the active id via the adjust-state-during-render pattern.
+  Safari/Firefox on macOS never focus a clicked button, so the item focuses itself on `mousedown`
+  (with `preventDefault` + `stopPropagation`); otherwise arrows do nothing after a mouse click there.
 - Performance indicator: `getPerformanceTone(value)` → `'low' | 'mid' | 'high'` with thresholds
   `< 50`, `< 80`, `≥ 80` in `constants/ui.ts`; number is shown next to the color and an `aria-label`
   «Эффективность 73%» exists for screen readers / colour-blind users.
@@ -132,12 +140,18 @@ type OrgModel = {
 - Budget ≤200 KB gzip: `vite build` prints sizes; `manualChunks` vendor split; `zod/mini` if needed.
 
 ### AI search (step 4)
-- `POST /api/search/parse { query }` → Anthropic SDK with structured output (JSON schema of the
+- `POST /api/search/parse { query }` → `openai` SDK `responses.parse` with `zodTextFormat` (the shared zod schema of the
   filter) → `{ text?, levels?, headcount?: {min?,max?}, budget?: {min?,max?}, performance?: {min?,max?}, sort?: { key, direction } }`.
+- Parsing runs on Enter or the «AI-разбор» button, never per keystroke (paid call, 1.5–2.5 s); the same field keeps
+  filtering by name in real time. `useAiSearch` wraps `useMutation`; per-call callbacks keep a slow old answer from
+  winning. Success clears the field and moves conditions into chips; `sort` from the answer sets the table sort.
+  A 503 is remembered until reload (button disabled). Ranges are inclusive; all filter keys are nullable for strict mode.
+- Model: `gpt-5.6-terra` by measurement (18/18 correct, p95 2.5 s); luna is cheaper but slower, sol nears the 5 s timeout.
+- Mock scenario bodies (`empty|error|invalid`) are `no-store` without ETag: they must not share cache entries with real data.
 - Client validates the response with the shared zod schema, shows the parsed filter as removable chips,
   applies it on top of the same row pipeline. Any failure (no key → 503, timeout 5 s, invalid JSON)
   → silent fallback to text search + badge «AI недоступен».
-- Load the `claude-api` skill before writing the server call.
+- Check current OpenAI docs through Context7 before writing the server call; never print the key from `.env`.
 
 ## 3. Deliverables checklist (assignment «Что сдавать»)
 - Commits `step/1`…`step/4` (author does them; `git push --tags`).

@@ -42,6 +42,7 @@ const broadcastChanges = (count: number) => {
   for (const index of indexes) {
     const node = state.nodes[index];
     if (!node) continue;
+
     const fields = mutateFields(node);
     state.nodes[index] = { ...node, ...fields, updatedAt };
     changes.push({ id: node.id, fields, updatedAt });
@@ -60,6 +61,7 @@ export const handleLiveUpgrade = (req: IncomingMessage, socket: Duplex, head: Bu
     socket.destroy();
     return;
   }
+
   wss.handleUpgrade(req, socket, head, client => {
     client.send(serialize({ type: 'hello', version: state.version }));
   });

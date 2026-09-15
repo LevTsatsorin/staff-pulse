@@ -1,0 +1,15 @@
+FROM node:24.21.0-alpine
+
+WORKDIR /app
+RUN corepack enable
+
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install --prod --frozen-lockfile --ignore-scripts
+
+COPY shared ./shared
+COPY server ./server
+
+ENV NODE_ENV=production PORT=3001
+EXPOSE 3001
+USER node
+CMD ["node", "server/index.ts"]

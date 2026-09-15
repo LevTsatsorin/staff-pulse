@@ -28,10 +28,12 @@ export const sortRows = (
   return rows.toSorted((a, b) => {
     const left = pick(a);
     const right = pick(b);
+
     if (left === null || right === null) {
       if (left === right) return a.order - b.order;
       return left === null ? 1 : -1;
     }
+
     return sign * compareValues(left, right) || a.order - b.order;
   });
 };

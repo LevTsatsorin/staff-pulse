@@ -54,6 +54,7 @@ export const DashboardPage: React.FC = () => {
         />
       );
     }
+
     if (!model) {
       return (
         <Panel title={TREE_TITLE}>
@@ -61,6 +62,7 @@ export const DashboardPage: React.FC = () => {
         </Panel>
       );
     }
+
     if (model.rootIds.length === 0) {
       return (
         <Panel title={TREE_TITLE}>
@@ -76,6 +78,7 @@ export const DashboardPage: React.FC = () => {
         </Panel>
       );
     }
+
     return (
       <SelectionProvider defaultExpandedIds={defaultExpandedIds}>
         <SplitView

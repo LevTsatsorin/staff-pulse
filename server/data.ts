@@ -69,9 +69,11 @@ const generateNodes = (): OrgNodeDto[] => {
   for (const [d, division] of STRUCTURE.entries()) {
     const divisionId = `div-${d + 1}`;
     push(divisionId, division.name, null, randomInt(3, 8));
+
     for (const [p, department] of division.departments.entries()) {
       const departmentId = `${divisionId}-dep-${p + 1}`;
       push(departmentId, department.name, divisionId, randomInt(2, 6));
+
       for (const [t, team] of department.teams.entries()) {
         push(`${departmentId}-team-${t + 1}`, team, departmentId, randomInt(4, 15));
       }

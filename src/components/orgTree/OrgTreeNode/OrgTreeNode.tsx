@@ -12,12 +12,15 @@ import type { OrgModel } from 'src/types/orgModel';
 interface OrgTreeNodeProps {
   id: string;
   model: OrgModel;
+  activeId: string | null;
+  onFocusNode: (id: string) => void;
 }
 
-export const OrgTreeNode: React.FC<OrgTreeNodeProps> = ({ id, model }) => {
+export const OrgTreeNode: React.FC<OrgTreeNodeProps> = ({ id, model, activeId, onFocusNode }) => {
   const { selectedId, expandedIds, select, toggleExpanded } = useSelection();
   const rowRef = useRef<HTMLDivElement>(null);
   const isSelected = selectedId === id;
+  const isActive = activeId === id;
   useScrollIntoView(rowRef, isSelected, EXPAND_ANIMATION_MS);
 
   const node = model.nodes[id];
@@ -28,23 +31,42 @@ export const OrgTreeNode: React.FC<OrgTreeNodeProps> = ({ id, model }) => {
   const hasChildren = childIds.length > 0;
   const isExpanded = hasChildren && expandedIds.has(id);
 
+  // Focus events bubble through nested items; without stopping here the ancestor item would
+  // register itself as active right after the child did.
+  const handleFocus = (event: React.FocusEvent) => {
+    event.stopPropagation();
+    onFocusNode(id);
+  };
+
+  // Safari and Firefox on macOS do not focus a clicked button, so a click would leave the keyboard
+  // target outside the tree. Focusing the item itself keeps arrow keys working in every browser.
+  const handleMouseDown = (event: React.MouseEvent<HTMLLIElement>) => {
+    event.stopPropagation();
+    event.preventDefault();
+    event.currentTarget.focus();
+  };
+
   const level = LEVEL_LABELS[node.depth] ?? FALLBACK_LEVEL_LABEL;
   const ownDetails = hasChildren
     ? `${level.ownPrefix}: ${node.headcount} чел., эффективность ${Math.round(node.performance)}%`
     : undefined;
 
   return (
-    <li
+    <Item
       role="treeitem"
-      tabIndex={-1}
+      tabIndex={isActive ? 0 : -1}
+      data-tree-id={id}
       aria-level={node.depth + 1}
       aria-expanded={hasChildren ? isExpanded : undefined}
       aria-selected={isSelected}
+      onFocus={handleFocus}
+      onMouseDown={handleMouseDown}
     >
       <Row ref={rowRef} $selected={isSelected}>
         {hasChildren ? (
           <Chevron
             type="button"
+            tabIndex={-1}
             aria-label={isExpanded ? 'Свернуть' : 'Раскрыть'}
             $expanded={isExpanded}
             onClick={() => toggleExpanded(id)}
@@ -52,7 +74,7 @@ export const OrgTreeNode: React.FC<OrgTreeNodeProps> = ({ id, model }) => {
         ) : (
           <ChevronPlaceholder aria-hidden="true" />
         )}
-        <SelectButton type="button" onClick={() => select(id)}>
+        <SelectButton type="button" tabIndex={-1} onClick={() => select(id)}>
           <Name $isRoot={node.depth === 0}>{node.name}</Name>
           <Meta data-tip={ownDetails}>
             <FlashValue value={aggregate.totalHeadcount}>
@@ -70,14 +92,29 @@ export const OrgTreeNode: React.FC<OrgTreeNodeProps> = ({ id, model }) => {
         <Collapsible isOpen={isExpanded}>
           <Group role="group">
             {childIds.map(childId => (
-              <OrgTreeNode key={childId} id={childId} model={model} />
+              <OrgTreeNode
+                key={childId}
+                id={childId}
+                model={model}
+                activeId={activeId}
+                onFocusNode={onFocusNode}
+              />
             ))}
           </Group>
         </Collapsible>
       )}
-    </li>
+    </Item>
   );
 };
+
+// The item itself is the keyboard target; its inner buttons stay clickable but leave the tab order.
+const Item = styled.li`
+  outline: none;
+
+  &:focus-visible > div {
+    box-shadow: inset 0 0 0 2px ${({ theme }) => theme.colors.accent};
+  }
+`;
 
 const Row = styled.div<{ $selected: boolean }>`
   display: flex;

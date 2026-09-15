@@ -2,49 +2,97 @@ import type React from 'react';
 
 import styled from 'styled-components';
 
+import { Button } from 'src/components/common';
 import { focusRing, panelBar, tabularNums } from 'src/styles/mixins';
 
 interface OrgTableToolbarProps {
   query: string;
   onQueryChange: (query: string) => void;
+  onSubmit: () => void;
+  isParsing: boolean;
+  canParse: boolean;
+  isAiUnavailable: boolean;
+  notice: string | null;
   shownCount: number;
   totalCount: number;
 }
 
+// Typing filters by name in real time; Enter or the button sends the same text to AI parsing.
 export const OrgTableToolbar: React.FC<OrgTableToolbarProps> = ({
   query,
   onQueryChange,
+  onSubmit,
+  isParsing,
+  canParse,
+  isAiUnavailable,
+  notice,
   shownCount,
   totalCount,
-}) => (
-  <Bar>
-    <SearchField>
-      <SearchInput
-        type="search"
-        value={query}
-        placeholder="Фильтр по названию"
-        aria-label="Фильтр по названию"
-        onChange={event => onQueryChange(event.target.value)}
-      />
-      {query && (
-        <ClearButton type="button" aria-label="Очистить фильтр" onClick={() => onQueryChange('')} />
+}) => {
+  const handleSubmit = (event: React.FormEvent) => {
+    event.preventDefault();
+    onSubmit();
+  };
+
+  return (
+    <Bar>
+      <SearchForm role="search" onSubmit={handleSubmit}>
+        <SearchField>
+          <SearchInput
+            type="search"
+            value={query}
+            enterKeyHint="search"
+            placeholder="Название или запрос для AI"
+            aria-label="Фильтр по названию или запрос для AI-разбора"
+            onChange={event => onQueryChange(event.target.value)}
+          />
+          {query && (
+            <ClearButton
+              type="button"
+              aria-label="Очистить фильтр"
+              onClick={() => onQueryChange('')}
+            />
+          )}
+        </SearchField>
+        <Button
+          type="submit"
+          $variant="ghost"
+          disabled={!canParse || isParsing || !query.trim()}
+          title="Enter — разобрать запрос на естественном языке"
+        >
+          {isParsing ? 'Разбираю…' : 'AI-разбор'}
+        </Button>
+      </SearchForm>
+      {isAiUnavailable && (
+        <AiBadge role="status" title="Работает обычный поиск по названию">
+          AI недоступен
+        </AiBadge>
       )}
-    </SearchField>
-    <Counter aria-live="polite">
-      {shownCount} из {totalCount}
-    </Counter>
-  </Bar>
-);
+      {notice && <Notice role="status">{notice}</Notice>}
+      <Counter aria-live="polite">
+        {shownCount} из {totalCount}
+      </Counter>
+    </Bar>
+  );
+};
 
 const Bar = styled.div`
   ${panelBar}
   flex: none;
 `;
 
+const SearchForm = styled.form`
+  display: flex;
+  flex: 1;
+  gap: ${({ theme }) => theme.space(2)};
+  max-width: 520px;
+  margin: 0;
+`;
+
 const SearchField = styled.div`
   position: relative;
   flex: 1;
-  max-width: 360px;
+  min-width: 0;
 
   &::before {
     content: '';
@@ -134,6 +182,21 @@ const ClearButton = styled.button`
   &:hover {
     color: ${({ theme }) => theme.colors.text};
   }
+`;
+
+const AiBadge = styled.span`
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--color-tone-mid-bg);
+  color: var(--color-tone-mid-text);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+`;
+
+const Notice = styled.span`
+  color: ${({ theme }) => theme.colors.textMuted};
+  font-size: 12px;
 `;
 
 const Counter = styled.span`

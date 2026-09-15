@@ -1,6 +1,6 @@
 # Архитектура
 
-Документ обновляется по этапам. Актуален для этапа 03; раздел этапа 04 помечен.
+Документ описывает итоговое состояние после этапа 04.
 
 ## Слои
 
@@ -12,10 +12,11 @@
 │                   layout/ (шапка, split-view, панели) │
 │                   orgTree/ (дерево)  orgTable/        │
 ├──────────────────────────────────────────────────────┤
-│ hooks/            useOrgTree, useOrgLiveUpdates, …    │
+│ hooks/            useOrgTree, useOrgLiveUpdates,      │
+│                   useTableRows, useAiSearch, …        │
 │ providers/        SelectionProvider — UI-состояние    │
 ├──────────────────────────────────────────────────────┤
-│ api/              fetchJson → getOrgTree → queryClient│
+│ api/              fetchJson → getOrgTree, parseSearch │
 │ utils/            чистые функции + тесты              │
 ├──────────────────────────────────────────────────────┤
 │ shared/           zod-схемы и пути API (клиент+сервер)│
@@ -84,10 +85,45 @@ server ticker ──patch──▶ /ws ──▶ useOrgLiveUpdates
 - Подсветка: `FlashValue` хранит предыдущее значение и номер поколения; реальное изменение увеличивает поколение, новый `key` перемонтирует `span` и перезапускает CSS-анимацию. Таймеров нет.
 - Перерисовки: `applyPatch` сохраняет ссылки незатронутых узлов, `OrgTableRow` сравнивает поля строки, `useRevealNode` отдаёт стабильный колбэк. Патч перерисовывает только строки изменённого узла и его предков.
 - Клавиатура в таблице: `useRovingRows` — одна tab-остановка, активная строка хранится по id, фокус переставляется только после нажатия клавиши.
-- Дерево: ветки анимируются через `Collapsible` (см. [ADR-004](adr/004-height-animation-grid.md)).
+- Дерево: ветки анимируются через `Collapsible` (см. [ADR-004](adr/004-height-animation-grid.md)). Клавиатура — `useRovingTree`: порядок видимых узлов считает `getVisibleTreeIds`, действие по клавише — чистая `getTreeKeyAction` (→ раскрыть или войти, ← свернуть или подняться, ↑/↓/Home/End по видимым). Таблица и дерево делят `useRovingFocus`: фокус переставляется только после нажатия клавиши.
 
 Контракт сообщений и правила применения — в [data-model.md](data-model.md), выбор транспорта — в [ADR-003](adr/003-websocket-live-updates.md).
 
-## Этап 04
+## AI-поиск
 
-nginx проксирует `/api` и `/ws` (с `Upgrade`-заголовками), AI-поиск работает на сервере.
+```
+поле поиска ──ввод, дебаунс 250 мс──▶ query: фильтр по названию
+     │
+     └─Enter / «AI-разбор»──▶ useAiSearch ──POST /api/search/parse──▶ server/search.ts
+                                   │                                  │ OpenAI responses.parse
+                                   │ ошибка или 503                   │ zodTextFormat(structuredFilterSchema)
+                                   ▼                                  │
+                   бейдж «AI недоступен», query остаётся фильтром     │
+                                                                      │
+                   StructuredFilter ◀── zod на клиенте ◀──────────────┘
+                      ├─ sort ──▶ useSortState
+                      ├─ условия ──▶ чипы FilterChips (крестик убирает условие из фильтра)
+                      ▼
+     useTableRows: toTableRows → filterRows(query) → applyStructuredFilter → sortRows(sort)
+```
+
+- Схема фильтра одна: `shared/search.ts`. По ней сервер формирует structured output и валидирует ответ модели, клиент проверяет ответ сервера.
+- Разбор запускается по Enter или кнопке «AI-разбор», не на каждое нажатие. Успех очищает поле и превращает условия в чипы, `sort` выставляет сортировку таблицы. Ошибка оставляет текст фильтром по названию и показывает бейдж «AI недоступен»; ответ 503 (ключ не задан) запоминается до перезагрузки.
+- Решение и замер моделей — [ADR-005](adr/005-ai-search-with-fallback.md), контракт эндпоинта — [data-model.md](data-model.md).
+
+## Развёртывание
+
+```
+браузер ──:8080──▶ client (nginx:1.31.5-alpine)
+                    ├─ /           статика из dist/, gzip, SPA-fallback на index.html
+                    ├─ /assets/    Cache-Control: immutable (имена с хешем)
+                    ├─ /api/       ──▶ server:3001
+                    └─ /ws         ──▶ server:3001 (Upgrade, proxy_read_timeout 1h)
+                   server (node:24.21.0-alpine, node server/index.ts)
+```
+
+- `Dockerfile.client` — сборка в стадии `node`, в итоговом образе только nginx и `dist/`. Версия сборки в шапке приходит build-аргументом `BUILD_VERSION`; при локальной сборке `vite.config.ts` берёт короткий хеш коммита.
+- `Dockerfile.server` — только prod-зависимости (`openai`, `ws`, `zod`), процесс под пользователем `node`, Node 24 исполняет `.ts` без сборки.
+- `GET /api/health` отдаёт `{ ok, version }`; healthcheck в compose опрашивает его, и nginx стартует только после готовности сервера, поэтому первый запрос дашборда не упирается в 502.
+- Клиент ходит на относительные `/api` и `/ws`, поэтому одному образу клиента не нужны переменные окружения. Настройки сервера и порт хоста — в `.env` (`docker-compose.yaml` читает его, если файл есть).
+- Ответы демо-сценариев mock-сервера (`empty`, `error`, `invalid`) отдаются с `Cache-Control: no-store` и без `ETag`, чтобы браузер не перепутал их с закэшированными реальными данными той же версии.
