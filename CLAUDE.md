@@ -41,7 +41,7 @@ Before handing work back: `pnpm typecheck && pnpm lint && pnpm test && pnpm buil
    companies anywhere in the repo.
 
 ## Code rules (short form; details in the code-style skill)
-- Comments only where the decision is non-obvious, always in English (config files included). No narration, no JSDoc on trivial things.
+- Comments only where the decision is non-obvious, always in English (config files included). No narration, no JSDoc on trivial things, no tool or process markers.
 - Named exports, `React.FC<Props>`, styles below the component, transient props with finite values.
 - Logic in hooks and pure utils, markup in components, pages only compose.
 - Exact dependency versions, no `^`.

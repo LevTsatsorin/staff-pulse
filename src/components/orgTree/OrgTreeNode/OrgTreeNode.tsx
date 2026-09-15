@@ -1,20 +1,25 @@
 import type React from 'react';
+import { useRef } from 'react';
 
 import styled from 'styled-components';
 
-import { PerformanceIndicator } from 'src/components/orgTree/PerformanceIndicator/PerformanceIndicator';
+import { PerformanceIndicator } from 'src/components/common';
 import { FALLBACK_LEVEL_LABEL, LEVEL_LABELS } from 'src/constants/ui';
+import { useScrollIntoView, useSelection } from 'src/hooks/common';
 import { focusRing, tabularNums } from 'src/styles/mixins';
 import type { OrgModel } from 'src/types/orgModel';
 
 interface OrgTreeNodeProps {
   id: string;
   model: OrgModel;
-  expandedIds: ReadonlySet<string>;
-  onToggle: (id: string) => void;
 }
 
-export const OrgTreeNode: React.FC<OrgTreeNodeProps> = ({ id, model, expandedIds, onToggle }) => {
+export const OrgTreeNode: React.FC<OrgTreeNodeProps> = ({ id, model }) => {
+  const { selectedId, expandedIds, select, toggleExpanded } = useSelection();
+  const rowRef = useRef<HTMLDivElement>(null);
+  const isSelected = selectedId === id;
+  useScrollIntoView(rowRef, isSelected);
+
   const node = model.nodes[id];
   const aggregate = model.aggregates[id];
   if (!node || !aggregate) return null;
@@ -29,63 +34,73 @@ export const OrgTreeNode: React.FC<OrgTreeNodeProps> = ({ id, model, expandedIds
     : undefined;
 
   return (
-    <Item
+    <li
       role="treeitem"
+      tabIndex={-1}
       aria-level={node.depth + 1}
       aria-expanded={hasChildren ? isExpanded : undefined}
+      aria-selected={isSelected}
     >
-      <Row>
+      <Row ref={rowRef} $selected={isSelected}>
         {hasChildren ? (
           <Chevron
             type="button"
             aria-label={isExpanded ? 'Свернуть' : 'Раскрыть'}
             $expanded={isExpanded}
-            onClick={() => onToggle(id)}
+            onClick={() => toggleExpanded(id)}
           />
         ) : (
           <ChevronPlaceholder aria-hidden="true" />
         )}
-        <Name>{node.name}</Name>
-        <Meta data-tip={ownDetails}>
-          <Headcount>{aggregate.totalHeadcount} чел.</Headcount>
-          <PerformanceIndicator value={aggregate.avgPerformance} />
-        </Meta>
+        <SelectButton type="button" onClick={() => select(id)}>
+          <Name $isRoot={node.depth === 0}>{node.name}</Name>
+          <Meta data-tip={ownDetails}>
+            <Headcount>{aggregate.totalHeadcount} чел.</Headcount>
+            <PerformanceIndicator value={aggregate.avgPerformance} />
+          </Meta>
+        </SelectButton>
       </Row>
       {isExpanded && (
         <Group role="group">
           {childIds.map(childId => (
-            <OrgTreeNode
-              key={childId}
-              id={childId}
-              model={model}
-              expandedIds={expandedIds}
-              onToggle={onToggle}
-            />
+            <OrgTreeNode key={childId} id={childId} model={model} />
           ))}
         </Group>
       )}
-    </Item>
+    </li>
   );
 };
 
-const Item = styled.li`
-  &[aria-level='1'] > div > span:first-of-type {
-    font-weight: 600;
-  }
-`;
-
-const Row = styled.div`
+const Row = styled.div<{ $selected: boolean }>`
   display: flex;
   align-items: center;
-  gap: ${({ theme }) => theme.space(2)};
+  gap: ${({ theme }) => theme.space(1)};
   min-height: ${({ theme }) => theme.rowHeight};
   padding: 0 ${({ theme }) => theme.space(2)};
   border-radius: ${({ theme }) => theme.radius.sm};
+  background: ${({ theme, $selected }) => ($selected ? theme.colors.accentSoft : 'transparent')};
+  scroll-margin-block: ${({ theme }) => theme.space(2)};
   transition: background 120ms ease;
 
   &:hover {
-    background: ${({ theme }) => theme.colors.surfaceHover};
+    background: ${({ theme, $selected }) => ($selected ? theme.colors.accentSoft : theme.colors.surfaceHover)};
   }
+`;
+
+const SelectButton = styled.button`
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: ${({ theme }) => theme.space(2)};
+  min-width: 0;
+  min-height: ${({ theme }) => theme.rowHeight};
+  padding: 0 ${({ theme }) => theme.space(1)};
+  border: 0;
+  border-radius: ${({ theme }) => theme.radius.sm};
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  ${focusRing}
 `;
 
 const Chevron = styled.button<{ $expanded: boolean }>`
@@ -122,8 +137,9 @@ const ChevronPlaceholder = styled.span`
   width: 24px;
 `;
 
-const Name = styled.span`
+const Name = styled.span<{ $isRoot: boolean }>`
   flex: 1;
+  font-weight: ${({ $isRoot }) => ($isRoot ? 600 : 400)};
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;

@@ -15,12 +15,14 @@ changes it; the README section «Интерпретации» must list the item
 | «Второй уровень открыт по умолчанию» (README) | Root nodes (divisions) are expanded, so two levels are visible; departments stay collapsed. Constant `DEFAULT_EXPANDED_DEPTH = 0` (expand nodes with depth ≤ 0). | Shows the structure without dumping all 52 nodes; one constant flips it. |
 | `headcount` / `performance` in the tree node (README) | Subtree totals: aggregated headcount and headcount-weighted average performance. Own values in the row `title` tooltip. | Own values on a parent read as wrong numbers («дивизион — 5 чел.» above a team of 15); a hierarchy is read top-down as sums. Aggregates therefore exist from step 1. |
 | Sorting: click vs double click (README) | Click on another column → that column with its default direction. Click on the active column → no-op. Double click → reverse direction. Keyboard: Enter/Space on the active header reverses. | `dblclick` always arrives after two `click` events, so click must be idempotent. |
-| Default direction per column | name, level: asc; headcount, budget, performance: desc. | Numbers are read "biggest first". |
+| Default sort direction (README) | Ascending for every column. Click on a new column = asc, double click reverses, so a double click on an inactive column always ends desc. | Per-type defaults (text asc, numbers desc) were tried and rejected by the author: switching columns and double clicking gave different results per column. |
+| Default table order (README) | No active sort: tree pre-order (division, its departments, their teams). Every sort breaks ties by tree order. | Mirrors the tree on first view; stable order keeps hierarchy readable. |
 | Filter vs aggregates (README) | Filter only hides rows; aggregates are never recomputed from filtered data. | Aggregates describe the org, not the view. |
 | Patch contract (README) | A patch changes only `headcount`, `budget`, `performance` (+ `updatedAt`). No `parentId` or `name` changes. | One ancestor chain to recompute; no cycle checks on the hot path. |
 | Level column | Number 1/2/3 plus label Дивизион / Отдел / Команда. Depth is computed from the data, not from names. | Data may have more levels; label is cosmetic. |
 | Average performance with total headcount 0 | `null` → rendered as «—», always sorted last in either direction. | Weighted average is undefined. |
-| Layout | Split view (tree + table) at ≥1280px AND a segmented toggle Дерево / Таблица below that width. | Covers both readings of the requirement; selection sync is visible. |
+| Layout | Split view (tree + table) at ≥1280px AND a segmented toggle Дерево / Таблица below that width. Pure CSS: both panels always mounted, a `width < 1280px` media query hides the inactive one by `data-view`; no `useMediaQuery`. | Covers both readings; no resize subscription; state survives switching. |
+| Failed background refetch (README) | Keep last data on screen, header says «не удалось обновить». Error screen only when there is no data at all. | TanStack keeps `data` on refetch error; replacing the dashboard with an error would lose context. |
 | Multiple roots | Allowed (forest). Mock data has 4 divisions. | Real org trees have several top-level units. |
 | Live transport | WebSocket. | The deliverables list names a "WebSocket patch contract". |
 | Cache layer | TanStack Query v5, not a hand-written cache. | "stale time" is literally its API; abort via `signal`; `structuralSharing` gives "invalidate only on real change". Own cache = 100+ lines of races. → ADR-001 |
@@ -78,6 +80,8 @@ type OrgModel = {
 - Name cell shows the parent path in muted small text («Коммерция · Продажи») because a flat sorted
   table loses hierarchy. Match is highlighted with `<mark>`.
 - Filter: controlled input, `useDebouncedValue(value, 250)`, compare with `toLocaleLowerCase('ru')`.
+- Sorting logic is the pure `getNextSort(prev, key, 'click' | 'reverse')`. Keyboard activation of the header button is a click with `event.detail === 0` → treated as `reverse`.
+- Clearing the filter bypasses the debounce (`appliedQuery = query.trim() ? debounced : ''`).
 - Keyboard: roving tabindex, one tab stop; ↑/↓, Home/End move the active row, Enter selects.
   Active row is stored by **id**, not index; if it disappears (filter), fall back to the first row.
 - Budget: `new Intl.NumberFormat('ru-RU')` once per module + ` руб.`; the group separator is a

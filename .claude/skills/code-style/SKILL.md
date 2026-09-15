@@ -133,8 +133,8 @@ providers/SelectionProvider/
 
 ## 6. Types and constants
 
-- `import type` for types. Shared helpers in `types/helpers.ts`:
-  `Nullable<T> = T | null | undefined`, `ValueOf<T> = T[keyof T]`.
+- `import type` for types. Shared helpers in `types/helpers.ts` (`ValueOf<T> = T[keyof T]`);
+  add a helper when the first caller needs it, not in advance.
 - `satisfies` to keep literal inference: `} satisfies SortState;`, `as const satisfies …`.
 - No `enum`. Literal unions from `as const` objects:
   ```ts
@@ -169,6 +169,9 @@ providers/SelectionProvider/
   attribute with a finite set of values.
 - Animations: CSS `@keyframes` and `transition`, restarted by React `key` changes, not JS timers.
 - `@media (prefers-reduced-motion: reduce)` disables transitions and animations globally.
+- Any grid or flex item that contains a scroll container needs `min-width: 0` AND `min-height: 0`
+  (grid tracks: `minmax(0, 1fr)`). The default `min-width: auto` stops the item from shrinking
+  below its content, so inner `overflow: auto` never kicks in and the content overflows the layout.
 
 ## 9. Tooling
 
@@ -216,9 +219,10 @@ server variables (`PORT`, `MOCK_SCENARIO`, `PATCH_INTERVAL_MS`, `ANTHROPIC_API_K
 
 ## 11. Git and docs
 
-- Conventional Commits with optional scope, Russian subject: `feat(client): интерактивное дерево`,
+- Conventional Commits with optional scope, English subject: `feat: step 01 — scaffold, mock API, tree`,
   `fix(server): …`, `chore: …`, `docs: …`. Types limited to feat / fix / chore / docs / refactor.
 - One commit per assignment stage, tagged `step/1` … `step/4`. The author commits, never the AI.
+  Tags are lightweight, so `git push --follow-tags` does NOT push them: always `git push origin step/N`.
 - No `--no-verify`.
 - ADR files `docs/adr/NNN-название.md` with fixed sections: Контекст / Решение / Альтернативы / Последствия.
 

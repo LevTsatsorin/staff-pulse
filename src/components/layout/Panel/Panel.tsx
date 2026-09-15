@@ -21,6 +21,7 @@ export const Panel: React.FC<PanelProps> = ({ title, actions, children }) => (
 const Card = styled.section`
   display: flex;
   flex-direction: column;
+  min-width: 0;
   min-height: 0;
   border: 1px solid ${({ theme }) => theme.colors.border};
   border-radius: ${({ theme }) => theme.radius.md};

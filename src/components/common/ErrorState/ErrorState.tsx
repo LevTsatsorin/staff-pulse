@@ -7,16 +7,17 @@ import { Button } from 'src/components/common/Button/Button';
 interface ErrorStateProps {
   message: string;
   onRetry?: () => void;
+  isRetrying?: boolean;
 }
 
-export const ErrorState: React.FC<ErrorStateProps> = ({ message, onRetry }) => (
+export const ErrorState: React.FC<ErrorStateProps> = ({ message, onRetry, isRetrying = false }) => (
   <Wrapper role="alert">
     <Icon aria-hidden="true">!</Icon>
     <Title>Не удалось загрузить данные</Title>
     <Message>{message}</Message>
     {onRetry && (
-      <Button type="button" onClick={onRetry}>
-        Повторить
+      <Button type="button" onClick={onRetry} disabled={isRetrying}>
+        {isRetrying ? 'Повторяем…' : 'Повторить'}
       </Button>
     )}
   </Wrapper>

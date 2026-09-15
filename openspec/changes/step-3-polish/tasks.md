@@ -6,6 +6,7 @@
 
 ## 2. Применение патчей
 
+- [ ] 2.0 Стабильные строки таблицы: `toTableRows` пересоздаёт все объекты на каждую модель, а `useRevealNode` меняет ссылку `onSelect` при смене модели — после патча перерисуются все `OrgTableRow`. Переиспользовать строку, если `node` и `aggregate` не изменились по ссылке (и путь тот же), `onSelect` держать стабильным; проверить React DevTools «Highlight updates»: патч подсвечивает только строки узла и предков
 - [ ] 2.1 `utils/tree/applyPatch.ts` (копия узла, цепочка предков, пересчёт из прямых детей, сохранение ссылок) + тест: один узел, пачка, неизвестный id → результат «нужен рефетч», эквивалентность 1000 случайных патчей полному пересчёту, сохранение ссылок незатронутых узлов — `pnpm test`
 - [ ] 2.2 `hooks/live/useOrgLiveUpdates.ts`: сокет, валидация, сверка версий, `setQueryData`, `invalidateQueries` при пропуске/неизвестном id, backoff с jitter (`constants/live.ts`), `online`, `disposed`; проверить в dev с StrictMode — одно соединение, патч применяется один раз (счётчик в консоли временно)
 - [ ] 2.3 `components/layout/ConnectionBadge` (4 состояния, отсчёт через `nextRetryAt` и один интервал на 1 с) в шапке; проверить: остановить сервер → интервалы растут (лог задержек), `online/offline` в DevTools, запуск сервера → live + один рефетч в Network
@@ -21,4 +22,4 @@
 ## 4. Docs и передача автору
 
 - [ ] 4.1 `docs/data-model.md`: контракт WS (hello/patch, версии, правила применения), алгоритм `applyPatch`; `docs/adr/003-websocket-для-live-обновлений.md`, `docs/adr/004-анимация-высоты-через-grid.md`; README «Интерпретации» (патч не меняет parentId)
-- [ ] 4.2 Запись в `notes/ai-log.md`; сообщить автору текст коммита `feat: этап 03 — live-обновления, клавиатура, анимации` и тег `step/3`; после коммита — `openspec archive step-3-polish`
+- [ ] 4.2 Запись в `notes/ai-log.md`; после приёмки — `openspec archive step-3-polish`, затем передать автору текст коммита `feat: step 03 — live updates, keyboard, animations` и тег `step/3`

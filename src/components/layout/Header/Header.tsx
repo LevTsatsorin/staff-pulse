@@ -4,23 +4,30 @@ import styled, { keyframes } from 'styled-components';
 
 import { BUILD_VERSION } from 'src/config';
 
+export type RefreshState = 'idle' | 'refreshing' | 'failed';
+
 interface HeaderProps {
-  isRefreshing: boolean;
+  refreshState: RefreshState;
+  actions?: React.ReactNode;
 }
 
-export const Header: React.FC<HeaderProps> = ({ isRefreshing }) => (
+export const Header: React.FC<HeaderProps> = ({ refreshState, actions }) => (
   <Bar>
     <Brand>
       <Title>Staff Pulse</Title>
       <Subtitle>Мониторинг орг-структуры</Subtitle>
     </Brand>
     <Status>
-      {isRefreshing && (
-        <Hint role="status">
-          <Dot aria-hidden="true" />
-          обновляется…
-        </Hint>
-      )}
+      <Hint role="status">
+        {refreshState === 'refreshing' && (
+          <>
+            <Dot aria-hidden="true" />
+            обновляется…
+          </>
+        )}
+        {refreshState === 'failed' && 'не удалось обновить, показаны последние данные'}
+      </Hint>
+      {actions}
       <Version title="Версия сборки">{BUILD_VERSION}</Version>
     </Status>
   </Bar>

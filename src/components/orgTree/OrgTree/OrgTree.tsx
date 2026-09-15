@@ -3,30 +3,19 @@ import type React from 'react';
 import styled from 'styled-components';
 
 import { OrgTreeNode } from 'src/components/orgTree/OrgTreeNode/OrgTreeNode';
-import { useExpandedIds } from 'src/hooks/orgTree/useExpandedIds';
 import type { OrgModel } from 'src/types/orgModel';
 
 interface OrgTreeProps {
   model: OrgModel;
 }
 
-export const OrgTree: React.FC<OrgTreeProps> = ({ model }) => {
-  const { expandedIds, toggleExpanded } = useExpandedIds(model);
-
-  return (
-    <Tree role="tree" aria-label="Орг-структура">
-      {model.rootIds.map(id => (
-        <OrgTreeNode
-          key={id}
-          id={id}
-          model={model}
-          expandedIds={expandedIds}
-          onToggle={toggleExpanded}
-        />
-      ))}
-    </Tree>
-  );
-};
+export const OrgTree: React.FC<OrgTreeProps> = ({ model }) => (
+  <Tree role="tree" aria-label="Орг-структура">
+    {model.rootIds.map(id => (
+      <OrgTreeNode key={id} id={id} model={model} />
+    ))}
+  </Tree>
+);
 
 const Tree = styled.ul`
   padding: ${({ theme }) => theme.space(1)};

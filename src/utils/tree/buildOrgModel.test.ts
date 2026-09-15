@@ -1,25 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
 import { OrgDataError } from 'src/errors/OrgDataError';
-
-import type { OrgNodeDto } from 'shared/orgTree';
+import { makeOrgNodeDto as dto } from 'src/testing/orgFixtures';
 
 import { buildOrgModel } from './buildOrgModel';
-
-const dto = (
-  id: string,
-  parentId: string | null,
-  overrides: Partial<OrgNodeDto> = {},
-): OrgNodeDto => ({
-  id,
-  name: id,
-  parentId,
-  headcount: 1,
-  budget: 100,
-  performance: 50,
-  updatedAt: '2026-09-01T00:00:00.000Z',
-  ...overrides,
-});
 
 describe('buildOrgModel', () => {
   it('should build an empty model from an empty response', () => {

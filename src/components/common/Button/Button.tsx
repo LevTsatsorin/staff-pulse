@@ -16,7 +16,12 @@ export const Button = styled.button<{ $variant?: 'primary' | 'ghost' }>`
   transition: filter 120ms ease;
   ${focusRing}
 
-  &:hover {
+  &:hover:not(:disabled) {
     filter: brightness(0.96);
+  }
+
+  &:disabled {
+    cursor: progress;
+    opacity: 0.6;
   }
 `;

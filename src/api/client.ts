@@ -1,6 +1,6 @@
 import { ApiError } from 'src/errors/ApiError';
 
-export type JsonResponse = { body: unknown; etag: string | null };
+type JsonResponse = { body: unknown; etag: string | null };
 
 export const fetchJson = async (url: string, signal?: AbortSignal): Promise<JsonResponse> => {
   const response = await fetch(url, { signal, headers: { Accept: 'application/json' } });

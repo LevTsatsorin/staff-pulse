@@ -21,15 +21,15 @@
 - [x] 4.1 `src/config.ts`, `constants/{api,cache,ui}.ts`, `errors/{ApiError,ApiValidationError,OrgDataError}.ts`, `utils/toUserMessage.ts`; `api/client.ts` (`fetchJson(url, { signal })`, HTTP-ошибка → `ApiError` со статусом); проверить typecheck
 - [x] 4.4 `utils/tree/aggregate.ts` (`aggregateNode`, `computeAggregates`: суммы поддерева, взвешенная средняя, `null` при нулевой численности) + тесты (лист, вложенность, ноль, лес, пусто); встроить в `buildOrgModel` — перенесено из этапа 02 после первого визуального прогона
 - [x] 4.2 `utils/tree/buildOrgModel.ts` (+ `.test.ts`: пусто, один узел, лес, глубина, дубль id, сирота, цикл) и `types/orgModel.ts`; проверить `pnpm test`
-- [ ] 4.3 `api/orgTree.ts` (`getOrgTree(signal)`: fetch → `safeParse` → `buildOrgModel`, версия из `ETag`), `api/queryClient.ts` (`staleTime: 5_000`, `retry: 1`), `hooks/orgTree/useOrgTree.ts` (`useQuery`, возвращает `{ model, status, error, refetch, isFetching }`); проверить в DevTools: один запрос, повторный монтаж < 5 с без запроса, отмена при размонтировании (throttling + быстрый unmount), `AbortError` не показывается
+- [x] 4.3 `api/orgTree.ts` (`getOrgTree(signal)`: fetch → `safeParse` → `buildOrgModel`, версия из `ETag`), `api/queryClient.ts` (`staleTime: 5_000`, `retry: 1`), `hooks/orgTree/useOrgTree.ts` (`useQuery`, возвращает `{ model, status, error, refetch, isFetching }`); проверить в DevTools: один запрос, повторный монтаж < 5 с без запроса, отмена при размонтировании (throttling + быстрый unmount), `AbortError` не показывается
 
 ## 5. UI
 
-- [ ] 5.1 `styles/{GlobalStyle,theme,styled.d,mixins}.ts` (CSS-переменные, dark по `prefers-color-scheme`, reset, шрифт system-ui), `App.tsx` с `QueryClientProvider` + `ThemeProvider` + `ErrorBoundary`; проверить рендер пустой страницы без ошибок консоли
+- [x] 5.1 `styles/{GlobalStyle,theme,styled.d,mixins}.ts` (CSS-переменные, dark по `prefers-color-scheme`, reset, шрифт system-ui), `App.tsx` с `QueryClientProvider` + `ThemeProvider` + `ErrorBoundary`; проверить рендер пустой страницы без ошибок консоли
 - [x] 5.2 `components/common/{Skeleton,Spinner,ErrorState,EmptyState,ErrorBoundary}` (`ErrorState` с кнопкой «Повторить», `EmptyState` с заголовком, текстом и CTA); визуальная проверка — через `MOCK_SCENARIO` в 5.4
 - [x] 5.6 Направляющие вложенности (indent-rainbow): полоса + линия под колонкой шеврона, цвет по уровню через CSS-переменные; favicon inline-SVG; `--env-file-if-exists=.env` для сервера; убран deprecated `baseUrl` (проверено TS 6.0-beta: 0 предупреждений)
-- [ ] 5.3 `utils/getPerformanceTone.ts` (+ test порогов 49/50/79/80), `components/orgTree/{PerformanceIndicator,OrgTreeNode,OrgTree}`, `hooks/orgTree/useExpandedIds.ts` (начальное по `DEFAULT_EXPANDED_DEPTH`), разметка `role="tree"`; проверить: корни раскрыты, шеврон переключает, клик по названию не сворачивает, `aria-expanded` меняется
-- [ ] 5.4 `components/layout/{Header,DashboardLayout}`, `pages/dashboard/DashboardPage.tsx` (ветвление по `status`, `isFetching` → тихий индикатор в шапке); проверить все состояния через `MOCK_SCENARIO=empty|error|slow|invalid` и обычный режим
+- [x] 5.3 `utils/getPerformanceTone.ts` (+ test порогов 49/50/79/80), `components/orgTree/{PerformanceIndicator,OrgTreeNode,OrgTree}`, `hooks/orgTree/useExpandedIds.ts` (начальное по `DEFAULT_EXPANDED_DEPTH`), разметка `role="tree"`; проверить: корни раскрыты, шеврон переключает, клик по названию не сворачивает, `aria-expanded` меняется
+- [x] 5.4 `components/layout/{Header,DashboardLayout}`, `pages/dashboard/DashboardPage.tsx` (ветвление по `status`, `isFetching` → тихий индикатор в шапке); проверить все состояния через `MOCK_SCENARIO=empty|error|slow|invalid` и обычный режим
 - [x] 5.5 Приёмка этапа: `grep -rn "style=" src/` пусто; `pnpm typecheck && pnpm lint && pnpm test && pnpm build` зелёные; размер gzip из `vite build` записан в лог
 
 ## 6. Docs и передача автору

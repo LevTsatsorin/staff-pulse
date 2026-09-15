@@ -1,5 +1,9 @@
 export const LOCALE = 'ru-RU';
 
+export const SEARCH_DEBOUNCE_MS = 250;
+
+export const SPLIT_VIEW_MIN_WIDTH_PX = 1280;
+
 // nodes with depth <= this value start expanded (0 = only roots)
 export const DEFAULT_EXPANDED_DEPTH = 0;
 

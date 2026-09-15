@@ -21,9 +21,10 @@ const Shell = styled.div`
 `;
 
 const Main = styled.main`
+  display: grid;
   flex: 1;
+  grid-template-rows: minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
   min-height: 0;
   padding: ${({ theme }) => theme.space(5)};
-  display: grid;
-  gap: ${({ theme }) => theme.space(5)};
 `;
