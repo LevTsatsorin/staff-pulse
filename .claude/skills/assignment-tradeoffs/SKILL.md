@@ -1,0 +1,140 @@
+---
+name: assignment-tradeoffs
+description: Decisions, interpretations of ambiguous requirements and known pitfalls for the Staff Pulse assignment — cache layer, aggregation model, WebSocket patch flow, tree/table UX semantics (expand defaults, sorting by click/double-click, filter, keyboard navigation, fade animation), styling constraints, docker/nginx, AI search fallback. Load this whenever implementing or changing ANY feature of this dashboard, writing docs/ADRs/README for it, or when unsure how a requirement should be read. Do not re-decide what is written here; update this file when a decision changes.
+---
+
+# Staff Pulse: decisions and trade-offs
+
+The assignment leaves several things "на усмотрение". Every choice below is final unless the author
+changes it; the README section «Интерпретации» must list the items marked (README).
+
+## 1. Interpretations of the assignment
+
+| Topic | Decision | Why |
+|---|---|---|
+| «Второй уровень открыт по умолчанию» (README) | Root nodes (divisions) are expanded, so two levels are visible; departments stay collapsed. Constant `DEFAULT_EXPANDED_DEPTH = 0` (expand nodes with depth ≤ 0). | Shows the structure without dumping all 52 nodes; one constant flips it. |
+| `headcount` in the tree node (README) | Own headcount of the node. Tooltip (`title`) shows the aggregated total. | Assignment says node shows `headcount`; aggregates belong to the table. |
+| Sorting: click vs double click (README) | Click on another column → that column with its default direction. Click on the active column → no-op. Double click → reverse direction. Keyboard: Enter/Space on the active header reverses. | `dblclick` always arrives after two `click` events, so click must be idempotent. |
+| Default direction per column | name, level: asc; headcount, budget, performance: desc. | Numbers are read "biggest first". |
+| Filter vs aggregates (README) | Filter only hides rows; aggregates are never recomputed from filtered data. | Aggregates describe the org, not the view. |
+| Patch contract (README) | A patch changes only `headcount`, `budget`, `performance` (+ `updatedAt`). No `parentId` or `name` changes. | One ancestor chain to recompute; no cycle checks on the hot path. |
+| Level column | Number 1/2/3 plus label Дивизион / Отдел / Команда. Depth is computed from the data, not from names. | Data may have more levels; label is cosmetic. |
+| Average performance with total headcount 0 | `null` → rendered as «—», always sorted last in either direction. | Weighted average is undefined. |
+| Layout | Split view (tree + table) at ≥1280px AND a segmented toggle Дерево / Таблица below that width. | Covers both readings of the requirement; selection sync is visible. |
+| Multiple roots | Allowed (forest). Mock data has 4 divisions. | Real org trees have several top-level units. |
+| Live transport | WebSocket. | The deliverables list names a "WebSocket patch contract". |
+| Cache layer | TanStack Query v5, not a hand-written cache. | "stale time" is literally its API; abort via `signal`; `structuralSharing` gives "invalidate only on real change". Own cache = 100+ lines of races. → ADR-001 |
+| Height animation without inline CSS | `display: grid; grid-template-rows: 0fr → 1fr; transition` on the wrapper, inner `overflow: hidden; min-height: 0`. Collapsed content gets `inert`. | Measuring `scrollHeight` and setting `style.height` is inline CSS by another name. → ADR-004 |
+| AI search model | `ANTHROPIC_MODEL` env, default `claude-opus-5`; 5 s timeout, `AbortSignal.timeout`. Server-side call only. | Author's call: quality of parsing over latency; model is env-switchable, measure at step 4. Reviewer likely runs without a key, so the fallback must look intentional. |
+
+## 2. Architecture decisions
+
+### Data model lives in the query cache, already aggregated
+`queryFn` = fetch → zod validate → `buildOrgModel(dtos)` → `OrgModel`. The cache never holds the raw
+array. Shape (plain objects only, `structuralSharing` does not understand `Map`):
+
+```ts
+type OrgModel = {
+  nodes: Record<string, OrgNode>;          // OrgNode = dto + depth
+  childrenIds: Record<string, string[]>;
+  rootIds: string[];
+  aggregates: Record<string, Aggregate>;   // { totalHeadcount, totalBudget, perfWeightedSum, avgPerformance: number | null }
+  version: number;                         // from ETag of the snapshot / last applied patch
+  snapshotVersion: number;                 // version at load time; version !== snapshotVersion ⇒ live patches applied
+};
+```
+
+- `aggregate` = own values + Σ children aggregates; `avgPerformance = perfWeightedSum / totalHeadcount`
+  or `null`. Computed once in `buildOrgModel` (assignment: "считается один раз и мемоизируется").
+- `applyPatch(model, changes)` copies only the changed nodes and their ancestor chain, recomputing
+  each ancestor **from its direct children** (no `+= delta`, floats drift). Untouched references are
+  preserved so memoized rows skip re-render. → ADR-002
+- Integrity checks in `buildOrgModel`: duplicate id, orphan parentId, cycle → `OrgDataError` → ErrorState.
+- Equivalence test: 1000 random patches applied incrementally must equal a full rebuild.
+
+### Versions, ETag, WebSocket
+- Server keeps `version` (monotonic). `GET /api/org-tree` sends `ETag: "<version>"`,
+  `Cache-Control: no-cache`, answers 304 to a matching `If-None-Match`.
+- WS on connect: `{ type: 'hello', version }`. If `hello.version > model.version` → `invalidateQueries`.
+- Patch: `{ type: 'patch', version, changes: [{ id, fields: { headcount?, budget?, performance? }, updatedAt }] }`.
+  Validated by the same zod discipline as REST. `version <= model.version` → ignore;
+  `version === model.version + 1` → `setQueryData(applyPatch)`; gap or unknown id → one `invalidateQueries`.
+- After reconnect patches were lost → one refetch; if nothing changed, structural sharing keeps references.
+- Backoff: `min(30_000, 1_000 · 2^attempt) · random(0.5…1)`; reset attempt on `open`; `online` event
+  reconnects immediately. Status: `connecting | live | reconnecting (in N s) | offline`.
+- StrictMode mounts effects twice: cleanup closes the socket, clears the timer, sets `disposed` so a
+  late `onclose` never schedules a reconnect. Otherwise dev applies every patch twice.
+
+### Fade of updated cells (~1.5 s)
+- CSS `@keyframes` from `var(--color-flash)` to transparent on an inner `<span>`.
+- The span's `key` is `${field}:${value}`; a changed value remounts it and restarts the animation.
+  Unchanged cells keep their key → no flash. Row keeps `key={id}`.
+- Animation is enabled only when `model.version !== model.snapshotVersion`, so the initial render
+  does not flash every cell. No per-cell timers.
+
+### Table
+- Real `<table>`, `<th aria-sort>` with a `<button>` inside, sticky header, numeric columns right
+  aligned with `font-variant-numeric: tabular-nums`, `user-select: none` on headers (double click).
+- Name cell shows the parent path in muted small text («Коммерция · Продажи») because a flat sorted
+  table loses hierarchy. Match is highlighted with `<mark>`.
+- Filter: controlled input, `useDebouncedValue(value, 250)`, compare with `toLocaleLowerCase('ru')`.
+- Keyboard: roving tabindex, one tab stop; ↑/↓, Home/End move the active row, Enter selects.
+  Active row is stored by **id**, not index; if it disappears (filter), fall back to the first row.
+- Budget: `new Intl.NumberFormat('ru-RU')` once per module + ` руб.`; the group separator is a
+  non-breaking space (U+00A0) — assert that in the test, it also prevents line wrapping.
+- Sorting a column that a patch changes moves the row; focus stays on the id, so keyboard nav survives.
+
+### Tree
+- Nested `<ul role="tree">` / `<li role="treeitem" aria-expanded aria-level aria-selected>`; indentation
+  comes from nesting, no `$depth` prop, no padding math.
+- Expanded state is a `Set<id>` held in `SelectionProvider` together with `selectedId`, so it survives
+  patches, filter, view toggle. Only the chevron `<button>` toggles; clicking the label selects.
+- Selecting from the table expands all ancestors and `scrollIntoView({ block: 'nearest' })`
+  (`behavior: 'smooth'` only without reduced motion). Selection is bidirectional.
+- Performance indicator: `getPerformanceTone(value)` → `'low' | 'mid' | 'high'` with thresholds
+  `< 50`, `< 80`, `≥ 80` in `constants/ui.ts`; number is shown next to the color and an `aria-label`
+  «Эффективность 73%» exists for screen readers / colour-blind users.
+
+### States
+- Branch on `status` (pending / error / success). Loading → skeleton rows of the real row height;
+  spinner only if loading exceeds ~200 ms.
+- Two different empty states: API returned `[]` («Структура пуста») vs filter found nothing («Сбросить фильтр»).
+- Error → `toUserMessage(error)` + «Повторить» (`refetch`). Render errors → `ErrorBoundary`.
+- Background refetch: data stays, quiet «обновляется…» hint in the header.
+
+### Mock server
+- `node:http` + `ws`, no framework. Node 24 runs `server/index.ts` directly (type stripping);
+  `erasableSyntaxOnly` in the server tsconfig keeps the syntax Node can strip.
+- Deterministic data: seeded PRNG, 4 divisions × 3 departments × 3 teams = 52 nodes, Russian names,
+  every node has its own headcount (not only leaves).
+- Ticker: every 1–3 s mutate 1 random node; every ~5th tick a batch of 2–4 nodes (tests batching).
+- `MOCK_SCENARIO=empty|error|slow|invalid` env reproduces client states; the client knows nothing about it.
+
+### Deployment (step 4)
+- Client image: build stage → `nginx:alpine`. `nginx.conf`: `gzip on` + `gzip_types` (js/css/json/svg),
+  `try_files $uri /index.html`, `location /api` → server, `location /ws` with
+  `proxy_http_version 1.1; proxy_set_header Upgrade $http_upgrade; proxy_set_header Connection "upgrade";`.
+- Server image: `node:24-alpine`, `pnpm install --prod` (only `dependencies`), `node server/index.ts`.
+- Client uses relative `/api` and `/ws` → no client env, one image works everywhere. `.env` is for
+  the server and compose only.
+- Budget ≤200 KB gzip: `vite build` prints sizes; `manualChunks` vendor split; `zod/mini` if needed.
+
+### AI search (step 4)
+- `POST /api/search/parse { query }` → Anthropic SDK with structured output (JSON schema of the
+  filter) → `{ text?, levels?, headcount?: {min?,max?}, budget?: {min?,max?}, performance?: {min?,max?}, sort?: { key, direction } }`.
+- Client validates the response with the shared zod schema, shows the parsed filter as removable chips,
+  applies it on top of the same row pipeline. Any failure (no key → 503, timeout 5 s, invalid JSON)
+  → silent fallback to text search + badge «AI недоступен».
+- Load the `claude-api` skill before writing the server call.
+
+## 3. Deliverables checklist (assignment «Что сдавать»)
+- Commits `step/1`…`step/4` (author does them; `git push --tags`).
+- README: one-command run (`pnpm i && pnpm dev`; `docker-compose up`), «Интерпретации», «AI в разработке»
+  (from `notes/ai-log.md`), screenshots/GIF: split view, fade after a patch, reconnecting badge, all
+  three empty/error states.
+- Unit tests: aggregation, applyPatch equivalence, sortRows, formatMoney, getPerformanceTone.
+- `docs/architecture.md` (layers, data flow API → cache → hooks → UI), `docs/data-model.md`
+  (tree, aggregation algorithm, WS patch contract), `docs/adr/`:
+  001 TanStack Query as cache, 002 aggregates inside the cache + incremental recompute,
+  003 WebSocket over SSE/polling + resync after reconnect, 004 height animation via grid rows,
+  005 AI search with graceful fallback.

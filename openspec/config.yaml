@@ -1,0 +1,32 @@
+schema: spec-driven
+
+context: |
+  Staff Pulse — тестовое задание: дашборд орг-структуры (дивизионы → отделы → команды).
+  Стек: React 19, Vite, TypeScript strict, styled-components 6, TanStack Query 5, zod 4,
+  Biome 2, Vitest; mock-сервер на node:http + ws (Node 24 исполняет .ts напрямую).
+  Один pnpm-пакет: src/ — клиент, server/ — mock API, shared/ — общий контракт (zod-схемы, пути API).
+  Конвенции кода: .claude/skills/code-style/SKILL.md.
+  Решения и интерпретации ТЗ: .claude/skills/assignment-tradeoffs/SKILL.md — не перерешать.
+  Change'и совпадают с этапами ТЗ: step-N ↔ один коммит автора с тегом step/N.
+  Язык артефактов, документации и UI — русский; код, идентификаторы, комментарии — английский.
+  Запрещено ТЗ: UI-библиотеки, inline-CSS, авторизация, БД.
+
+rules:
+  proposal:
+    - До одной страницы; «Why» — одна-две фразы со ссылкой на этап ТЗ
+  specs:
+    - Требования через ДОЛЖЕН; каждый сценарий проверяем руками или тестом
+  design:
+    - Только нетривиальные решения; кандидаты в ADR помечать «→ ADR-NNN»
+  tasks:
+    - Каждая задача содержит способ проверки; последняя группа — docs + запись в notes/ai-log.md
+
+operations:
+  apply:
+    guidance:
+      - Перед кодом загрузить скиллы code-style и assignment-tradeoffs
+      - Не коммитить и не тегировать — это делает автор проекта
+      - После каждой группы задач — запись в notes/ai-log.md (что сгенерировано / переписано / почему)
+  archive:
+    guidance:
+      - Архивировать change только после того, как автор сделал коммит этапа с тегом step/N
