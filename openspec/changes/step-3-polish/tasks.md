@@ -6,7 +6,7 @@
 
 ## 2. Применение патчей
 
-- [ ] 2.1 `utils/tree/applyPatch.ts` (копия узла, цепочка предков, пересчёт из прямых детей, сохранение ссылок) + тест: один узел, пачка, неизвестный id → результат «нужен рефетч», эквивалентность 1000 случайных патчей полному пересчёту, сохранение ссылок незатронутых узлов — `pnpm test --run`
+- [ ] 2.1 `utils/tree/applyPatch.ts` (копия узла, цепочка предков, пересчёт из прямых детей, сохранение ссылок) + тест: один узел, пачка, неизвестный id → результат «нужен рефетч», эквивалентность 1000 случайных патчей полному пересчёту, сохранение ссылок незатронутых узлов — `pnpm test`
 - [ ] 2.2 `hooks/live/useOrgLiveUpdates.ts`: сокет, валидация, сверка версий, `setQueryData`, `invalidateQueries` при пропуске/неизвестном id, backoff с jitter (`constants/live.ts`), `online`, `disposed`; проверить в dev с StrictMode — одно соединение, патч применяется один раз (счётчик в консоли временно)
 - [ ] 2.3 `components/layout/ConnectionBadge` (4 состояния, отсчёт через `nextRetryAt` и один интервал на 1 с) в шапке; проверить: остановить сервер → интервалы растут (лог задержек), `online/offline` в DevTools, запуск сервера → live + один рефетч в Network
 
@@ -16,7 +16,7 @@
 - [ ] 3.2 `hooks/common/useRovingRows.ts` + интеграция в `OrgTable` (`tabIndex`, `onKeyDown`, фокус по `data-id`), видимый focus-ring через миксин; проверить ↑/↓/Home/End/Enter, сортировку после патча, исчезновение активной строки при фильтре
 - [ ] 3.3 `components/common/Collapsible` (grid rows, `inert`), подключить в `OrgTreeNode`, поворот шеврона, глобальный `prefers-reduced-motion`; проверить: анимация ~200 мс, `style` в DOM отсутствует, Tab не заходит в свёрнутое, reduced-motion мгновенно
 - [ ] 3.4 (опционально, если есть время) стрелки ←/→/↑/↓ в дереве по паттерну WAI-ARIA tree
-- [ ] 3.5 Приёмка: `pnpm typecheck && pnpm lint && pnpm test --run && pnpm build`, `grep style=` пусто, GIF: fade после патча и бейдж reconnecting
+- [ ] 3.5 Приёмка: `pnpm typecheck && pnpm lint && pnpm test && pnpm build`, `grep style=` пусто, GIF: fade после патча и бейдж reconnecting
 
 ## 4. Docs и передача автору
 

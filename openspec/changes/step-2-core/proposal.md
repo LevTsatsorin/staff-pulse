@@ -4,7 +4,7 @@
 
 ## What Changes
 
-- Агрегаты в `OrgModel`: суммарные сотрудники и бюджет по поддереву, средняя эффективность, взвешенная по `headcount`; считаются один раз в `buildOrgModel`.
+- Таблица строится на агрегатах из `OrgModel` (считаются один раз в `buildOrgModel` с этапа 01).
 - Таблица: столбцы Подразделение / Уровень / Всего сотрудников / Бюджет суммарный / Средняя эффективность; сортировка по любому столбцу (клик), обратная — двойным кликом; фильтр по названию с дебаунсом 250 мс; формат бюджета `12 345 678 руб.`.
 - Двусторонняя связь дерева и таблицы: клик по строке выделяет узел в дереве и раскрывает его предков; клик по узлу выделяет строку.
 - Раскладка: split-view от 1280px, ниже — переключатель «Дерево / Таблица».
@@ -18,9 +18,8 @@
 - `dashboard-layout`: раскладка страницы, переключение представлений, шапка
 
 ### Modified Capabilities
-- `org-data`: добавляются агрегаты в нормализованную модель
 - `org-tree`: добавляется выделение узла и раскрытие предков при выборе из таблицы
 
 ## Impact
 
-`src/utils/tree/aggregate.ts`, `utils/table/*`, `utils/format/*`, `hooks/orgTable/*`, `hooks/common/{useDebouncedValue,useMediaQuery,useSelection}`, `providers/SelectionProvider`, `components/orgTable/*`, `components/layout/*`, `pages/dashboard`. Новых зависимостей нет.
+`utils/table/*`, `utils/format/*`, `hooks/orgTable/*`, `hooks/common/{useDebouncedValue,useMediaQuery,useSelection}`, `providers/SelectionProvider`, `components/orgTable/*`, `components/layout/*`, `pages/dashboard`. Новых зависимостей нет.

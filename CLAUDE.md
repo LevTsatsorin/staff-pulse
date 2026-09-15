@@ -22,7 +22,7 @@ package. Forbidden by the assignment: UI libraries, inline CSS, auth, DB.
 
 ## Commands
 `pnpm dev` (client + server) · `build` · `start` · `typecheck` · `test` · `lint` · `lint:fix`.
-Before handing work back: `pnpm typecheck && pnpm lint && pnpm test --run && pnpm build`.
+Before handing work back: `pnpm typecheck && pnpm lint && pnpm test && pnpm build`.
 
 ## Workflow
 1. Work inside the current openspec change: `openspec status --change step-N-…`; tick tasks as they land.
@@ -41,7 +41,7 @@ Before handing work back: `pnpm typecheck && pnpm lint && pnpm test --run && pnp
    companies anywhere in the repo.
 
 ## Code rules (short form; details in the code-style skill)
-- Comments only where the decision is non-obvious. No narration, no JSDoc on trivial things.
+- Comments only where the decision is non-obvious, always in English (config files included). No narration, no JSDoc on trivial things.
 - Named exports, `React.FC<Props>`, styles below the component, transient props with finite values.
 - Logic in hooks and pure utils, markup in components, pages only compose.
 - Exact dependency versions, no `^`.

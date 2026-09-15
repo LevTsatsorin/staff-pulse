@@ -1,0 +1,94 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.5.13/schema.json",
+  "vcs": {
+    "enabled": true,
+    "clientKind": "git",
+    "useIgnoreFile": true
+  },
+  "files": {
+    "includes": ["**", "!dist"]
+  },
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 100,
+    "lineEnding": "lf",
+    "useEditorconfig": true
+  },
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "single",
+      "jsxQuoteStyle": "double",
+      "semicolons": "always",
+      "trailingCommas": "all",
+      "arrowParentheses": "asNeeded",
+      "bracketSpacing": true
+    }
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "suspicious": {
+        "noExplicitAny": "warn",
+        "noConsole": "error",
+        "useIterableCallbackReturn": "error"
+      },
+      "correctness": {
+        "noUnusedImports": "error",
+        "noUnusedVariables": "error",
+        "useExhaustiveDependencies": "warn",
+        "noUndeclaredVariables": "error",
+        "noNodejsModules": "error"
+      },
+      "performance": {
+        "noAccumulatingSpread": "warn"
+      },
+      "style": {
+        "noEnum": "warn",
+        "useNodejsImportProtocol": "error"
+      }
+    }
+  },
+  "assist": {
+    "actions": {
+      "source": {
+        "organizeImports": {
+          "level": "on",
+          "options": {
+            "groups": [
+              ":NODE:",
+              ":BLANK_LINE:",
+              ["react", "react/**", "react-dom", "react-dom/**"],
+              ":BLANK_LINE:",
+              [":PACKAGE:", "!src/**", "!shared/**"],
+              ":BLANK_LINE:",
+              ["src/**"],
+              ":BLANK_LINE:",
+              ["shared/**"],
+              ":BLANK_LINE:",
+              ["../**"],
+              ":BLANK_LINE:",
+              ["./**"]
+            ]
+          }
+        }
+      }
+    }
+  },
+  "overrides": [
+    {
+      "includes": ["server/**", "vite.config.ts"],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noConsole": "off"
+          },
+          "correctness": {
+            "noNodejsModules": "off"
+          }
+        }
+      }
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 ## 1. Агрегация
 
-- [ ] 1.1 `utils/tree/aggregate.ts` (обход детей → `Aggregate`, `perfWeightedSum`, `null` при нулевом headcount), встроить в `buildOrgModel`, расширить `types/orgModel.ts`; тесты: лист, вложенность, нулевой headcount, лес, пустое дерево — `pnpm test --run` зелёный
+- [x] 1.1 `utils/tree/aggregate.ts` + тесты — сделано на этапе 01 (дерево показывает суммы поддерева); здесь только убедиться, что таблица использует `model.aggregates`, а не считает заново
 - [ ] 1.2 `utils/format/formatMoney.ts` (+ тест на U+00A0 и суффикс « руб.»), `formatPercent.ts`, `LEVEL_LABELS` в `constants/ui.ts`; проверить тестами
 
 ## 2. Пайплайн строк
@@ -17,9 +17,9 @@
 
 - [ ] 4.1 `components/orgTable/OrgTable/` (`<table>`, sticky `<thead>`, `SortableHeader` с `<button>` и `aria-sort`, `user-select: none`), `OrgTableRow` (`React.memo`, tabular-nums, `LevelBadge`, `HighlightedText`), `OrgTableToolbar` (поле фильтра с очисткой, счётчик «N из M»); проверить сортировку каждого столбца, двойной клик, Enter на заголовке
 - [ ] 4.2 Состояние «Ничего не найдено» с кнопкой «Сбросить фильтр» (переиспользовать `EmptyState`); клик по строке → `useRevealNode`; клик по узлу дерева → `select`; `aria-selected` в дереве и подсветка строки; проверить связь в обе стороны, прокрутку к узлу, `prefers-reduced-motion` (DevTools → Rendering)
-- [ ] 4.3 Приёмка этапа: фильтр «прод» с таймингом дебаунса в Network/console, формат бюджета, `pnpm typecheck && pnpm lint && pnpm test --run && pnpm build` зелёные, `grep style=` пусто
+- [ ] 4.3 Приёмка этапа: фильтр «прод» с таймингом дебаунса в Network/console, формат бюджета, `pnpm typecheck && pnpm lint && pnpm test && pnpm build` зелёные, `grep style=` пусто
 
 ## 5. Docs и передача автору
 
-- [ ] 5.1 `docs/data-model.md` (структура модели, алгоритм агрегации, формулы), `docs/adr/002-агрегаты-в-кэше.md`, README «Интерпретации» (двойной клик, фильтр и агрегаты, уровень, «—» при нулевом headcount)
+- [ ] 5.1 `docs/data-model.md` (структура модели, алгоритм агрегации, формулы; ADR-002 уже написан на этапе 01), README «Интерпретации» (двойной клик, фильтр и агрегаты, уровень, «—» при нулевом headcount)
 - [ ] 5.2 Запись в `notes/ai-log.md`; сообщить автору текст коммита `feat: этап 02 — аналитическая таблица` и тег `step/2`; после коммита — `openspec archive step-2-core`

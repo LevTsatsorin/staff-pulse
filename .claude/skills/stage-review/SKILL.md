@@ -12,7 +12,7 @@ the rulebook this review enforces.
 ## 1. Mechanical gate (run, do not reason about)
 
 ```bash
-pnpm typecheck && pnpm lint && pnpm test --run && pnpm build
+pnpm typecheck && pnpm lint && pnpm test && pnpm build
 grep -rn "style=" src/                 # must be empty (assignment: no inline CSS)
 grep -rn "export default" src/ server/ shared/   # only vite/config entry files allowed
 git status --short                     # staff_pulse_*.md and notes/ must NOT appear

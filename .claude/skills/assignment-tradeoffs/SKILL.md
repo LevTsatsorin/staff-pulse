@@ -13,7 +13,7 @@ changes it; the README section «Интерпретации» must list the item
 | Topic | Decision | Why |
 |---|---|---|
 | «Второй уровень открыт по умолчанию» (README) | Root nodes (divisions) are expanded, so two levels are visible; departments stay collapsed. Constant `DEFAULT_EXPANDED_DEPTH = 0` (expand nodes with depth ≤ 0). | Shows the structure without dumping all 52 nodes; one constant flips it. |
-| `headcount` in the tree node (README) | Own headcount of the node. Tooltip (`title`) shows the aggregated total. | Assignment says node shows `headcount`; aggregates belong to the table. |
+| `headcount` / `performance` in the tree node (README) | Subtree totals: aggregated headcount and headcount-weighted average performance. Own values in the row `title` tooltip. | Own values on a parent read as wrong numbers («дивизион — 5 чел.» above a team of 15); a hierarchy is read top-down as sums. Aggregates therefore exist from step 1. |
 | Sorting: click vs double click (README) | Click on another column → that column with its default direction. Click on the active column → no-op. Double click → reverse direction. Keyboard: Enter/Space on the active header reverses. | `dblclick` always arrives after two `click` events, so click must be idempotent. |
 | Default direction per column | name, level: asc; headcount, budget, performance: desc. | Numbers are read "biggest first". |
 | Filter vs aggregates (README) | Filter only hides rows; aggregates are never recomputed from filtered data. | Aggregates describe the org, not the view. |
@@ -45,7 +45,7 @@ type OrgModel = {
 ```
 
 - `aggregate` = own values + Σ children aggregates; `avgPerformance = perfWeightedSum / totalHeadcount`
-  or `null`. Computed once in `buildOrgModel` (assignment: "считается один раз и мемоизируется").
+  or `null`. Computed once in `buildOrgModel` (`utils/tree/aggregate.ts`, since step 1: the tree shows totals).
 - `applyPatch(model, changes)` copies only the changed nodes and their ancestor chain, recomputing
   each ancestor **from its direct children** (no `+= delta`, floats drift). Untouched references are
   preserved so memoized rows skip re-render. → ADR-002
@@ -91,6 +91,8 @@ type OrgModel = {
   patches, filter, view toggle. Only the chevron `<button>` toggles; clicking the label selects.
 - Selecting from the table expands all ancestors and `scrollIntoView({ block: 'nearest' })`
   (`behavior: 'smooth'` only without reduced motion). Selection is bidirectional.
+- Indent guides: each `ul[role=group]` paints a tinted band + line under the parent's chevron column, color per nesting
+  level via CSS custom properties set by nesting selectors in `OrgTree` (indent-rainbow style, no depth prop).
 - Performance indicator: `getPerformanceTone(value)` → `'low' | 'mid' | 'high'` with thresholds
   `< 50`, `< 80`, `≥ 80` in `constants/ui.ts`; number is shown next to the color and an `aria-label`
   «Эффективность 73%» exists for screen readers / colour-blind users.

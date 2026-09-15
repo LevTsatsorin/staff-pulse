@@ -9,7 +9,7 @@
 - [ ] 2.1 `shared/search.ts` (zod-схема `structuredFilterSchema` + JSON-схема для модели из неё), `server/search.ts` (`POST /api/search/parse`, SDK, structured output, таймаут 5 с, 400/503/504) — перед кодом загрузить скилл `claude-api`; проверить curl-ом с ключом и без
 - [ ] 2.2 `utils/table/applyStructuredFilter.ts` + тест (levels, диапазоны, text, пустой фильтр), `hooks/orgTable/useAiSearch.ts` (дебаунс, AbortController, fallback, «недоступен» на сессию); проверить в UI: «команды с эффективностью ниже 50», «продажи», без ключа — бейдж и текстовый поиск
 - [ ] 2.3 `components/orgTable/{SearchBox,FilterChips}` (чипы с удалением, бейдж «AI недоступен», индикатор «разбираю…»), интеграция `sort` из фильтра в `useSortState`; проверить удаление чипа и сброс
-- [ ] 2.4 Приёмка: `pnpm typecheck && pnpm lint && pnpm test --run && pnpm build`, `docker-compose up` с нуля
+- [ ] 2.4 Приёмка: `pnpm typecheck && pnpm lint && pnpm test && pnpm build`, `docker-compose up` с нуля
 
 ## 3. Финальные docs и передача автору
 

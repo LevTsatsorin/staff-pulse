@@ -10,7 +10,7 @@
 
 ## Decisions
 
-- **Агрегаты — часть `OrgModel`, считаются в `buildOrgModel`.** `aggregates[id] = { totalHeadcount, totalBudget, perfWeightedSum, avgPerformance }`; `avgPerformance = perfWeightedSum / totalHeadcount` или `null`. Хранить `perfWeightedSum` отдельно нужно, чтобы на 03 пересчитывать предка из прямых детей без повторного обхода поддерева. Альтернатива — `useMemo` от сырого массива — пересчитывает всё при каждом патче. → ADR-002.
+- **Агрегаты — часть `OrgModel`, считаются в `buildOrgModel` (реализовано на этапе 01, см. ADR-002).** `aggregates[id] = { totalHeadcount, totalBudget, perfWeightedSum, avgPerformance }`; `avgPerformance = perfWeightedSum / totalHeadcount` или `null`. Хранить `perfWeightedSum` отдельно нужно, чтобы на 03 пересчитывать предка из прямых детей без повторного обхода поддерева. Альтернатива — `useMemo` от сырого массива — пересчитывает всё при каждом патче. → ADR-002.
 - **Пайплайн строк — цепочка чистых функций** `toTableRows(model)` → `filterRows(rows, query)` → `sortRows(rows, sort)`, каждая в своём `useMemo` внутри `useTableRows`. `toTableRows` зависит только от модели, поэтому фильтр и сортировка её не трогают.
 - **Сортировка:** локальное состояние `{ key, direction }` в `useSortState`; компаратор на столбец; `null` всегда в конце независимо от направления; строки — `localeCompare('ru')`. Обработка `click` идемпотентна, `dblclick` переключает — потому что `dblclick` всегда приходит после двух `click`.
 - **Фильтр:** `useDebouncedValue(query, SEARCH_DEBOUNCE_MS)`; сравнение через `toLocaleLowerCase('ru')`; подсветка `<mark>` через утилиту `splitByMatch`.
